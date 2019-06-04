@@ -1,0 +1,21 @@
+---
+title: "XML Vignette"
+author: "Steven Miller and Clayton Ramsey"
+date: "June 4, 2019"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Description of XML data
+
+# XML packages and functions
+
+# XML dataset
+
+# Exploratory data analysis
