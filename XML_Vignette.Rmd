@@ -8,8 +8,26 @@ output:
     toc_float: true
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# These were recommented from some resources I studied
+library(XML)
+library(xml2)
+library(methods)
+library(tidyr)
+library(plyr)
+
+# https://www.tutorialspoint.com/r/r_xml_files.htm
+# https://stackoverflow.com/questions/17198658/how-to-parse-xml-to-r-data-frame
+# http://www.informit.com/articles/article.aspx?p=2215520
+# loading the file: https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5
+
+d <- read_xml("death_rates.xml")
+d_list <- xmlToList(d)
+d_year <- d %>% xml_find_all("//year")
+# d_df <- ldply(d_list, data.frame)
+
 ```
 
 # Description of XML data
@@ -19,3 +37,4 @@ knitr::opts_chunk$set(echo = TRUE)
 # XML dataset
 
 # Exploratory data analysis
+## A graph
