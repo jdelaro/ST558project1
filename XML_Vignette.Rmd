@@ -21,14 +21,15 @@ library(plyr)
 # https://www.tutorialspoint.com/r/r_xml_files.htm
 # https://stackoverflow.com/questions/17198658/how-to-parse-xml-to-r-data-frame
 # http://www.informit.com/articles/article.aspx?p=2215520
-# loading the file: https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5
 
-d <- read_xml("death_rates.xml")
-d_list <- xmlToList(d)
-d_year <- d %>% xml_find_all("//year")
+# This is exploratory work on figuring out XML.
+# d <- read_xml("death_rates.xml")
+# d_list <- xmlToList(d)
+# d_year <- d %>% xml_find_all("//year")
 # d_df <- ldply(d_list, data.frame)
 
 ```
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(knitr)
 library(ggplot2)
@@ -48,12 +49,37 @@ XML is a format that can
 # XML packages and functions
 
 # XML dataset
+
+Our dataset is hosted at the [Centers for Disease Control and Prevention](https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5
+). There are 1044 observations of 5 variables: Year, Race, Sex, Average Life Expectancy, and Age-Adjusted Death Rate.
+
 ```{r setup, include=FALSE}
 library("XML")
 
-deathRatesDataXML <- xmlParse(file = "C:/Users/mille/OneDrive/Documents/ST 558/Death Rates XML.xml")
+# This produces a "large list" with all the values but in a highly nested structure.
+deathRatesDataXMLList <- xmlToList("death_rates.XML")
+# This, we can work with.
+# For example, this produces the year value from row 2:
+deathRatesDataXMLList$row[[2]]$year
+# This produces the mortality on row 170:
+deathRatesDataXMLList$row[[170]]$mortality
 
-#deathRatesData <- tbl_df(deathRatesDataXML)
+
+# One project requirement is to write a custom function. Converting this structure to a data fram would be a reason to do that.
+
+# deathRatesDataXML <- xmlParse(file = "C:/Users/mille/OneDrive/Documents/ST 558/Death Rates XML.xml")
+# Adding the XML to the repo so that we can each access it the same way locally.
+
+# This produces a pointer object.
+# deathRatesDataXML <- XML::xmlParse(file = "death_rates.xml")
+
+# This produces a list with pointer objects inside.
+# deathRatesDataXMLRead <- read_xml("death_rates.XML")
+
+# This line produces a single factor for each row, with all the data values crammed together.
+# deathRatesDataXMLDF <- xmlToDataFrame(deathRatesDataXML) %>% t() %>% data.frame()
+
+# deathRatesData <- tbl_df(deathRatesDataXML)
 ```
 
 # Exploratory data analysis
