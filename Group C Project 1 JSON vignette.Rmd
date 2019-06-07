@@ -1,0 +1,61 @@
+---
+title: 'DeLaRosa Project 1: *The one with Jason and Earthquakes*'
+author: "Jesse DeLaRosa and Sophia Melenikiotis"
+date: "6/7/2019"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 4
+---
+
+# JSON Files, what they are, what they do, and what we did
+
+## Introduction to JSONs
+
+JSON files, as described by [fileinfo]("https://fileinfo.com/extension/json") are files "that stores simple data structures and objects in JavaScript Object Notation (JSON) format." They are used often in storing data from web applications and servers, sometimes moving data between the two. Naturally, we found our data set from such a source, though we'll go further into detail on that matter in a later section.
+
+## JSON and R
+
+R has a few great packages for reading JSON data sets into R. We started by seeing if `tidyverse` had options for this, and while they did not, they did recommend using `jsonlite` as an easy package to read in JSON files. Another option is `rjson`, and both `rjson` and `jsonlite` provide access to a great function for reading in JSON datasets into R: `fromJSON()`, which lets you read in a JSON and convert it into a data frame. We chose to use `fromJSON()` from `jsonlite` since that package got `tidyverse`'s recommendation.
+
+## An example of JSON data: Raleigh's surface temperature
+
+Ever increasing concerns of the state of the Earth's climate has led many a meterologist to collect data on temperatures of as many regions of the world as possible. [Berkeley Earth]("http://berkeleyearth.org/about/") is an organization of researchers who have collected data pertaining to the Earth's temperature across over a billion data points dating back to the 18th century, all freely available to the public. The [Chapel Hill Open Data](https://www.chapelhillopendata.org/page/home1/) website pulled a piece of this massive dataset and created a JSON file with information pertaining to Raleigh's average surface temperature from over 3000 days between 1743 and 2013.
+
+First, we'll demonstrate how easy it is to pull data from a JSON file into R using the `fromJSON` function and then show what the data frame looks like before describing what the variables represent.
+```{r setup, include=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(jsonlite)
+
+RaleighJson <- fromJSON("C:/Users/Jesse DeLaRosa/Desktop/Project/Grad School/ST 558 Data Science for Statisticians/Project 1/earth-surface-temperature-data0.json")
+head(RaleighJson)
+```
+
+The `city`, `country`, `latitude`, and `longitude` values correspond to where the data is coming from. Since the good people of Chapel Hill only pulled the Raleigh data, however, all of these values are the same across the 3,239 records we're working with. `Average temperature` is the average temperature of the day, `dt` is the date the data was recorded, and `Average temperature uncertainty` corresponds to the measured accuracy of the measurement. 
+
+We'll convert this data frame to a tibble before we continue, to make the data easier to work with `tidyverse`.
+
+```{r Raleightibble, include=TRUE, warning = FALSE}
+Raleightibble <- tbl_df(RaleighJson)
+Raleightibble
+```
+
+With growing concerns about temperature changes over time, having a data set that spans Raleigh's history back to when it was under British rule should give us a good idea of how such changes look. We'll examine these in terms of season and across years. First I'll create a variable specifically for each observation's year and moth, then use those for each observation's season and year range.
+
+```{r Raleighdatemod, include=TRUE, warning = FALSE}
+MonthYearandSeason <- function(df, ...){
+  df2 <- df %>% mutate("Year" = as.integer(substr(dt, 1, 4)))
+  df3 <- df2 %>% mutate("Month" = as.integer(substr(dt, 6, 7)))
+  df4 <- df3 %>% mutate("Season" = ifelse(Month > 2 & Month < 6, "Spring",
+                                       ifelse(Month > 5 & Month < 9, "Summer",
+                                              ifelse(Month > 8 & Month < 12, "Fall", "Winter"))))
+  df5 <- df4 %>% mutate("YearRange" = ifelse(Year > 1742 & Year < 1793, "1743-1792",
+                                      ifelse(Year > 1792 & Year < 1843, "1793-1842",
+                                      ifelse(Year > 1842 & Year < 1893, "1843-1892",
+                                      ifelse(Year > 1892 & Year < 1943, "1893-1942",
+                                      ifelse(Year > 1942 & Year < 1993, "1943-1992", "1993-2013"))))))
+  return(df5)
+}
+Raleigh <- MonthYearandSeason(Raleightibble)
+Raleigh
+```
