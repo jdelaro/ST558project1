@@ -1,5 +1,5 @@
 ---
-title: 'DeLaRosa Project 1: *The one with Jason and Earthquakes*'
+title: 'Group C Project 1 JSon vignette: *The one with Jason and temperatures'
 author: "Jesse DeLaRosa and Sophia Melenikiotis"
 date: "6/7/2019"
 output:
