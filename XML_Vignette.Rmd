@@ -29,12 +29,32 @@ d_year <- d %>% xml_find_all("//year")
 # d_df <- ldply(d_list, data.frame)
 
 ```
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(ggplot2)
+library(tidyverse)
+library(rmarkdown)
+library(tinytex)
+library(dplyr)
+```  
 
 # Description of XML data
+XML stands for extensible markup language. It is a method of formatting and structuring data to be able to easily share the data online. XML data is self describing, which means that the structure of the data as well as the data are embedded in the file. Therefore, an XML file contains the metadata that describes the data in addition to the actual data, which allows for the data to be read in and stored without building the structure of the data.
+Source: [TechTarget](https://searchmicroservices.techtarget.com/definition/XML-Extensible-Markup-Language)
+
+XML is a format that can 
+
 
 # XML packages and functions
 
 # XML dataset
+```{r setup, include=FALSE}
+library("XML")
+
+deathRatesDataXML <- xmlParse(file = "C:/Users/mille/OneDrive/Documents/ST 558/Death Rates XML.xml")
+
+#deathRatesData <- tbl_df(deathRatesDataXML)
+```
 
 # Exploratory data analysis
 ## A graph
