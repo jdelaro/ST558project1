@@ -33,10 +33,11 @@ library(plyr)
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(knitr)
 library(ggplot2)
-library(tidyverse)
+#library(tidyverse)
 library(rmarkdown)
 library(tinytex)
 library(dplyr)
+library(tidyr)
 ```  
 
 # Description of XML data
@@ -65,7 +66,33 @@ deathRatesDataXMLList$row[[2]]$year
 deathRatesDataXMLList$row[[170]]$mortality
 
 
-# One project requirement is to write a custom function. Converting this structure to a data fram would be a reason to do that.
+# One project requirement is to write a custom function. Converting this structure to a data frame would be a reason to do that.
+
+# The input list is l. I'm assuming it's a list formatted just like the one we produced from this XML file. The number of rows to do is n.
+
+XML_list_to_df <- function(l, n=length(l$row)){
+  if(!(is.list(l)) | !(is.numeric(n)) | n<1 | n>length(l$row)){
+    return(NULL)
+  }else{
+    d <- data.frame("row" = 1:n) # this will be the output
+    x <- character(n)
+    # run through the column names...
+    for(i in names(l$row[[n]])){
+      # grab the values and store them to a vector
+      for(j in 1:n){
+        #print(as.character(l$row[[j]][i]))
+        x[j] <- as.character(l$row[[j]][i])
+      }
+      # add that to the dataframe with the correct name
+#      print(x)
+      d[i] <- x
+    }
+  }
+  d %>% tibble::as_tibble() %>% return()
+}
+
+# Here is the data frame!
+deathRatesDF <- XML_list_to_df(deathRatesDataXMLList)
 
 # deathRatesDataXML <- xmlParse(file = "C:/Users/mille/OneDrive/Documents/ST 558/Death Rates XML.xml")
 # Adding the XML to the repo so that we can each access it the same way locally.
@@ -80,6 +107,16 @@ deathRatesDataXMLList$row[[170]]$mortality
 # deathRatesDataXMLDF <- xmlToDataFrame(deathRatesDataXML) %>% t() %>% data.frame()
 
 # deathRatesData <- tbl_df(deathRatesDataXML)
+```
+
+```{r}
+# Fixing up the dataframe...
+deathRateData <- deathRatesDF %>% dplyr::transmute(Year = as.integer(year),
+                                                   Race = as.factor(race),
+                                                    Sex = as.factor(sex),
+                                             AveLifeExp = as.double(average_life_expectancy),
+                                                   Mort = as.double(mortality))
+
 ```
 
 # Exploratory data analysis
