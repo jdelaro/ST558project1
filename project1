@@ -109,3 +109,61 @@ g <- ggplot(data=Raleigh_summer1, mapping=aes(x=Raleigh_summer1$Year,y=Raleigh_s
 g + geom_line(stat="identity") + labs(x="Year of Raleigh Summer",y="Raleigh Average Temperature (Uncertainty)")
 
 ```
+
+Below show a correlation matrix of all the variables. 
+```{r,echo=FALSE}
+library(corrplot)
+M <- cor(Raleigh_2000$averagetemperature,Raleigh_2000$averagetemperatureuncertainty)
+M
+
+```
+
+
+Below show a scatterplot of average temperature and average temperature (uncertainty)
+```{r,echo=FALSE}
+g <- ggplot(data=Raleigh_2000,mapping=aes(x=Raleigh_2000$averagetemperature,y=Raleigh_2000$averagetemperatureuncertainty))
+
+g + geom_point()
+```
+
+```{r,echo=FALSE}
+preG <- Raleigh %>% group_by(Year) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
+g <- ggplot(data = preG, aes(Year, `Average Mean Temperature`))
+g + geom_point(color = "darkorange", stat = "identity") + scale_y_continuous(limits = c(13,16)) + geom_smooth()
+```
+
+
+```{r,echo=FALSE}
+preG <- Raleigh %>% group_by(Year) %>% summarise(`Average Mean Temperature`= mean(averagetemperatureuncertainty, na.rm = TRUE))
+g <- ggplot(data = preG, aes(Year, `Average Mean Temperature`))
+g + geom_point(color = "darkorange", stat = "identity") + geom_smooth()
+```
+##### Average Temperature across year ranges
+
+Here we'll look at the average temperatures across year ranges. This could get graphic...
+
+```{r avgtempacrossrange, include=TRUE, warning = FALSE, message = FALSE}
+preG <- Raleigh %>% group_by(YearRange) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
+g <- ggplot(data = preG, aes(YearRange, `Average Mean Temperature`))
+g + geom_histogram(fill = "darkorange", stat = "identity")
+```
+
+This graph supports the same pattern that the smoothing line in the previous graph indicated, indicating an upward trend.
+
+##### Average Temperature across seasons
+
+Here we'll look at average temperatures across the seasons in Raleigh.
+
+```{r avgtempacrossseason, include=TRUE, warning = FALSE, message = FALSE}
+g <- ggplot(Raleigh, aes(Season, averagetemperature), show.legend = TRUE)
+g + geom_boxplot(aes(color = Season)) + scale_fill_discrete(name = "Season") + ggtitle("Average Temperature across Season")
+```
+To my surprise as a Raleigh local, the winters are actually colder than the summers! Sometimes its hard to tell the difference...
+##### Average Temperature across seasons and year ranges
+Here we'll facet the average temperatures across year ranges and look at the seasonal temperature averages across them all.
+
+```{r avgtempacrossseasonandrange, include=TRUE, warning = FALSE, message = FALSE}
+preG <- Raleigh %>% group_by(YearRange, Season) %>% summarise(mean = mean(averagetemperature, na.rm = TRUE))
+g <- ggplot(data = preG, aes(x = YearRange, y = mean))
+g + geom_bar(aes(fill = as.factor(Season)), stat = "identity", position = "dodge") + labs(x ="Year Ranges") + scale_fill_discrete(name = "")
+```
