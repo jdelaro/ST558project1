@@ -1,11 +1,11 @@
 ---
-title: 'Group C Project 1 JSon vignette: *The one with Jason and temperatures'
+title: 'Group C Project 1 JSOn vignette: *The one with Jason and temperatures*'
 author: "Jesse DeLaRosa and Sophia Melenikiotis"
 date: "6/7/2019"
 output:
   html_document:
     toc: yes
-    toc_depth: 4
+    toc_depth: 5
 ---
 
 # JSON Files, what they are, what they do, and what we did
@@ -21,6 +21,8 @@ R has a few great packages for reading JSON data sets into R. We started by seei
 ## An example of JSON data: Raleigh's surface temperature
 
 Ever increasing concerns of the state of the Earth's climate has led many a meterologist to collect data on temperatures of as many regions of the world as possible. [Berkeley Earth]("http://berkeleyearth.org/about/") is an organization of researchers who have collected data pertaining to the Earth's temperature across over a billion data points dating back to the 18th century, all freely available to the public. The [Chapel Hill Open Data](https://www.chapelhillopendata.org/page/home1/) website pulled a piece of this massive dataset and created a JSON file with information pertaining to Raleigh's average surface temperature from over 3000 days between 1743 and 2013.
+
+### Reading the data
 
 First, we'll demonstrate how easy it is to pull data from a JSON file into R using the `fromJSON` function and then show what the data frame looks like before describing what the variables represent.
 ```{r setup, include=TRUE, warning=FALSE, message=FALSE}
@@ -40,6 +42,9 @@ Raleightibble <- tbl_df(RaleighJson)
 Raleightibble
 ```
 
+
+### Creating new variables
+
 With growing concerns about temperature changes over time, having a data set that spans Raleigh's history back to when it was under British rule should give us a good idea of how such changes look. We'll examine these in terms of season and across years. First I'll create a variable specifically for each observation's year and moth, then use those for each observation's season and year range.
 
 ```{r Raleighdatemod, include=TRUE, warning = FALSE}
@@ -47,8 +52,8 @@ MonthYearandSeason <- function(df, ...){
   df2 <- df %>% mutate("Year" = as.integer(substr(dt, 1, 4)))
   df3 <- df2 %>% mutate("Month" = as.integer(substr(dt, 6, 7)))
   df4 <- df3 %>% mutate("Season" = ifelse(Month > 2 & Month < 6, "Spring",
-                                       ifelse(Month > 5 & Month < 9, "Summer",
-                                              ifelse(Month > 8 & Month < 12, "Fall", "Winter"))))
+                                   ifelse(Month > 5 & Month < 9, "Summer",
+                                  ifelse(Month > 8 & Month < 12, "Fall", "Winter"))))
   df5 <- df4 %>% mutate("YearRange" = ifelse(Year > 1742 & Year < 1793, "1743-1792",
                                       ifelse(Year > 1792 & Year < 1843, "1793-1842",
                                       ifelse(Year > 1842 & Year < 1893, "1843-1892",
@@ -57,5 +62,88 @@ MonthYearandSeason <- function(df, ...){
   return(df5)
 }
 Raleigh <- MonthYearandSeason(Raleightibble)
-Raleigh
+Raleigh[, 7:10]
+```
+
+### Numeric summaries
+
+#### Year Range and Seasons Distribution
+
+To start with, let's look at how spread out the observations are across `Year ranges` and `Season`, to see how distributed the data collected has been.
+
+##### Year Range Distribution
+
+```{r Raleighrangetable, include = TRUE, warning = FALSE}
+tab <- table(Raleigh$YearRange)
+knitr::kable(tab, col.names = c("Year Range", "# of Observations"), caption = "Distribution of Observations across Year Ranges")
+```
+
+```{r Raleighrangeplot, eval=TRUE, echo=FALSE}
+g <- ggplot(data = Raleigh, aes(stat = "count", YearRange))
+g + geom_density(fill = "darkorange", alpha = .5) + theme_gray()
+```
+
+It appears we have a fairly consistent distribution across all the year ranges, except for notably the latest range, likely due to the smaller scope of its range. 
+
+##### Season Distribution
+
+```{r Raleighseasontable, include = TRUE, warning = FALSE}
+tab <- table(Raleigh$Season)
+knitr::kable(tab, col.names = c("Season", "# of Observations"), caption = "Distribution of Observations across Seasons")
+```
+
+```{r Raleighseasonplot, eval=TRUE, echo=FALSE}
+g <- ggplot(data = Raleigh, aes(stat = "count", Season))
+g + geom_density(fill = "darkorange", alpha = .5) + theme_gray()
+```
+
+Fortunately, the seasons are uniformally distributed. In this case, it means that while we created the variables of `Year Range` and `Season`, the uniform or near uniform distributions of both mean further evaluations aren't much skewed across conditions.
+
+#### Average Temperature 
+
+Let's start visualizing our data by asking the simple question: does it appear that average temperatures in Raleigh have risen since 1743?
+
+##### Average Temperature across years
+```{r avgtempacrossyear, include=TRUE, warning = FALSE, message = FALSE}
+preG <- Raleigh %>% group_by(Year) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
+g <- ggplot(data = preG, aes(Year, `Average Mean Temperature`))
+g + geom_point(color = "darkorange", stat = "identity") + scale_y_continuous(limits = c(13,16)) + geom_smooth()
+```
+
+Short answer: uh... 
+
+While there appears to be an upward trend over time, there's a great apparent variance across the time series. For visualization sake, let's see what happens if we average the averages across time periods and go from there.
+
+##### Average Temperature across year ranges
+
+Here we'll look at the average temperatures across year ranges. This could get graphic...
+
+```{r avgtempacrossrange, include=TRUE, warning = FALSE, message = FALSE}
+preG <- Raleigh %>% group_by(YearRange) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
+g <- ggplot(data = preG, aes(YearRange, `Average Mean Temperature`))
+g + geom_histogram(fill = "darkorange", stat = "identity")
+```
+
+This graph supports the same pattern that the smoothing line in the previous graph indicated, indicating an upward trend.
+
+##### Average Temperature across seasons
+
+Here we'll look at average temperatures across the seasons in Raleigh.
+
+```{r avgtempacrossseason, include=TRUE, warning = FALSE, message = FALSE}
+preG <- Raleigh %>% group_by(Season) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
+g <- ggplot(data = preG, aes(Season, `Average Mean Temperature`))
+g + geom_histogram(fill = "darkorange", stat = "identity")
+```
+
+To my surprise as a Raleigh local, the winters are actually colder than the summers! Sometimes its hard to tell the difference...
+
+##### Average Temperature across seasons and year ranges
+
+Here we'll facet the average temperatures across year ranges and look at the seasonal temperature averages across them all.
+
+```{r avgtempacrossseasonandrange, include=TRUE, warning = FALSE, message = FALSE}
+preG <- Raleigh %>% group_by(YearRange, Season) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
+g <- ggplot(data = preG, aes(Season, `Average Mean Temperature`, group = YearRange))
+g + geom_histogram(fill = "darkorange", stat = "identity") + facet_wrap(~YearRange)
 ```
