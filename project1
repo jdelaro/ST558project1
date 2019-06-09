@@ -181,6 +181,7 @@ g + geom_bar(aes(fill = as.factor(Season)), stat = "identity", position = "dodge
 ```
 
 This looks at the year distribution of 2013 month by month. 
+For some reason when I run it in the chunk it comes back with an error, but alone it works so I don't know what's wrong. 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 Raleigh_2013 <- Raleigh %>% filter(Year==2013) 
