@@ -64,8 +64,9 @@ Raleigh
 The chart below shows the averages for the different seasons. If we filter down to the specific seasons for 2000 and beyond. We can see what year had the highest and lowest average temperature in said season. 
 ```{r,echo=FALSE}
 Raleigh_2000 <- Raleigh %>% filter(Year >= 2000) 
-g <- ggplot(data = Raleigh_2000, mapping = aes(x=Raleigh_2000$Season,y = Raleigh_2000$averagetemperature))
+g <- ggplot(data = Raleigh_2000, mapping = aes(x=Raleigh_2000$Season,y = Raleigh_2000$averagetemperature,fill="red"))
 g + geom_bar(stat="identity") + labs(x="Raleigh Seasons",y="Raleigh Average Temperature")
+
 
 
 ```
@@ -76,7 +77,7 @@ The chart below shows the average temperature for the different years from 2000 
 Raleigh_summer <- Raleigh_2000 %>% filter(Season == "Summer")
 Raleigh_winter <- Raleigh_2000 %>% filter(Season == "Winter")
 
-g <- ggplot(data=Raleigh_summer, mapping=aes(x=Raleigh_summer$Year,y=Raleigh_summer$averagetemperature))
+g <- ggplot(data=Raleigh_summer, mapping=aes(x=Raleigh_summer$Year,y=Raleigh_summer$averagetemperature,colour="orange"))
 
 g + geom_line(stat="identity") + labs(x="Year of Raleigh Summer",y="Raleigh Average Temperature")
 
@@ -119,28 +120,33 @@ M
 ```
 
 
-Below show a scatterplot of average temperature and average temperature (uncertainty)
+Below show a scatterplot of average temperature and average temperature (uncertainty). We see little correlation showing all seasons together. 
 ```{r,echo=FALSE}
-g <- ggplot(data=Raleigh_2000,mapping=aes(x=Raleigh_2000$averagetemperature,y=Raleigh_2000$averagetemperatureuncertainty))
+g <- ggplot(data=Raleigh_2000,mapping=aes(x=Raleigh_2000$averagetemperature,y=Raleigh_2000$averagetemperatureuncertainty,color=Raleigh_2000$Season))
 
-g + geom_point()
+g + geom_point() + labs(x="Average Temperature 2000 Raleigh",y="Average Temperature (uncertainty) 2000 Raleigh")
 ```
 
-```{r,echo=FALSE}
+
+We see from the chart below that the line fit shows to be quadratic from 1700s to 2000s. There is a slight decrease in the 1900s and then increases gradually throughout the 2000s. Based on the bar chart above showing the seasons distributions we can assume that the lines above are most likely summer and the lines below are winter. 
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
 preG <- Raleigh %>% group_by(Year) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
 g <- ggplot(data = preG, aes(Year, `Average Mean Temperature`))
 g + geom_point(color = "darkorange", stat = "identity") + scale_y_continuous(limits = c(13,16)) + geom_smooth()
 ```
 
 
-```{r,echo=FALSE}
-preG <- Raleigh %>% group_by(Year) %>% summarise(`Average Mean Temperature`= mean(averagetemperatureuncertainty, na.rm = TRUE))
-g <- ggplot(data = preG, aes(Year, `Average Mean Temperature`))
+We see from the graph below how it starts high in the 1700s and progressively decreases throughout time. 
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+preG <- Raleigh %>% group_by(Year) %>% summarise(`Average Mean Temperature (uncertainty)`= mean(averagetemperatureuncertainty, na.rm = TRUE))
+g <- ggplot(data = preG, aes(Year, `Average Mean Temperature (uncertainty)`))
 g + geom_point(color = "darkorange", stat = "identity") + geom_smooth()
 ```
 ##### Average Temperature across year ranges
 
 Here we'll look at the average temperatures across year ranges. This could get graphic...
+
 
 ```{r avgtempacrossrange, include=TRUE, warning = FALSE, message = FALSE}
 preG <- Raleigh %>% group_by(YearRange) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
@@ -150,7 +156,9 @@ g + geom_histogram(fill = "darkorange", stat = "identity")
 
 This graph supports the same pattern that the smoothing line in the previous graph indicated, indicating an upward trend.
 
+
 ##### Average Temperature across seasons
+
 
 Here we'll look at average temperatures across the seasons in Raleigh.
 
@@ -159,11 +167,31 @@ g <- ggplot(Raleigh, aes(Season, averagetemperature), show.legend = TRUE)
 g + geom_boxplot(aes(color = Season)) + scale_fill_discrete(name = "Season") + ggtitle("Average Temperature across Season")
 ```
 To my surprise as a Raleigh local, the winters are actually colder than the summers! Sometimes its hard to tell the difference...
+
+
 ##### Average Temperature across seasons and year ranges
-Here we'll facet the average temperatures across year ranges and look at the seasonal temperature averages across them all.
+
+
+Here we'll facet the average temperatures across year ranges and look at the seasonal temperature averages across them all. We see how the temperatures increase throughout the year ranges. 
 
 ```{r avgtempacrossseasonandrange, include=TRUE, warning = FALSE, message = FALSE}
 preG <- Raleigh %>% group_by(YearRange, Season) %>% summarise(mean = mean(averagetemperature, na.rm = TRUE))
 g <- ggplot(data = preG, aes(x = YearRange, y = mean))
 g + geom_bar(aes(fill = as.factor(Season)), stat = "identity", position = "dodge") + labs(x ="Year Ranges") + scale_fill_discrete(name = "")
+```
+
+This looks at the year distribution of 2013 month by month. 
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+Raleigh_2013 <- Raleigh %>% filter(Year==2013) 
+
+Raleigh$Month_2 <- ifelse(Raleigh$Month==1,"January",ifelse(Raleigh$Month==2,"February",ifelse(Raleigh$Month==3,"March",ifelse(Raleigh$Month==4,"April",ifelse(Raleigh$Month==5,"May",ifelse(Raleigh$Month==6,"June",ifelse(Raleigh$Month==7,"July",ifelse(Raleigh$Month==8,"August",ifelse(Raleigh$Month==9,"September",ifelse(Raleigh$Month==10,"October",ifelse(Raleigh$Month==11,"November",ifelse(Raleigh$Month==12,"December",0))))))))))))
+
+Raleigh$Month_3 <- as.factor(Raleigh$Month_2)
+
+Raleigh$Month_4 <- factor(Raleigh$Month_3, levels=c("January","February","March","April","May","June","July","August","September","October","November","December"))
+
+g <- ggplot(data=Raleigh_2013, mapping=aes(x=Raleigh_2013$Month_4,y=Raleigh_2013$averagetemperature))
+
+g + geom_bar(stat="identity") + labs(x="Raleigh in 2013 Month by Month",y="Raleigh 2013 Average Temperature") 
 ```
