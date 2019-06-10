@@ -1,7 +1,7 @@
 ---
 title: "XML Vignette"
 author: "Steven Miller and Clayton Ramsey"
-date: "June 4, 2019"
+date: "June 9, 2019"
 output: 
   html_document:
     toc: true
@@ -10,11 +10,11 @@ output:
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 # These were recommented from some resources I studied
-library(XML)
+#library(XML)
 library(xml2)
-library(methods)
+#library(methods)
 library(tidyr)
 library(plyr)
 
@@ -30,12 +30,13 @@ library(plyr)
 
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
+
 library(knitr)
 library(ggplot2)
 #library(tidyverse)
-library(rmarkdown)
-library(tinytex)
+#library(rmarkdown)
+#library(tinytex)
 library(dplyr)
 library(tidyr)
 ```  
@@ -49,21 +50,38 @@ XML is a format that can
 
 # XML packages and functions
 
+This xml file was read in using `xmlToList()` from the `XML` package. This package is located at [CRAN](https://cran.r-project.org/web/packages/XML/index.html). The authors are Duncan Temple Lang and the CRAN Team (including Tomas Kalibera). The package contains a variety of functions with 
+
+>"many approaches for both reading and creating XML (and HTML) documents (including DTDs), both local and accessible via HTTP or FTP. Also offers access to an
+'XPath' ``interpreter''."
+
+See <https://cran.r-project.org/web/packages/XML/XML.pdf>
+
 # XML dataset
 
-Our dataset is hosted at the [Centers for Disease Control and Prevention](https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5
-). There are 1044 observations of 5 variables: Year, Race, Sex, Average Life Expectancy, and Age-Adjusted Death Rate.
+The CDC uses the [Socrata Open Data API](https://dev.socrata.com/) for requests. However, the API token system was not working when I requested one. Fortunately, there was a way to aquire the file in raw XML format for download.
 
-```{r setup, include=FALSE}
+Our dataset is hosted at the [Centers for Disease Control and Prevention](https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5
+). There are 1044 observations of 5 variables: Year, Race, Sex, Average Life Expectancy, and Age-Adjusted Death Rate. The following descriptions are from the above website.
+
+**Variables**
+
+* Year: Dates from 1900 to 2015.
+* Race: White, Black, or Both Races.
+* Sex: Male, Female, or Both Sexes.
+* Average Life Expectancy: Not available for the Black population before 1960 because of the way racial categories are formed.
+* Age-Adjusted Death Rate: Calculated in a variety of ways based on timeframe. See <https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5>.
+
+```{r include=FALSE}
 library("XML")
 
 # This produces a "large list" with all the values but in a highly nested structure.
 deathRatesDataXMLList <- xmlToList("death_rates.XML")
 # This, we can work with.
 # For example, this produces the year value from row 2:
-deathRatesDataXMLList$row[[2]]$year
+#  deathRatesDataXMLList$row[[2]]$year
 # This produces the mortality on row 170:
-deathRatesDataXMLList$row[[170]]$mortality
+#  deathRatesDataXMLList$row[[170]]$mortality
 
 
 # One project requirement is to write a custom function. Converting this structure to a data frame would be a reason to do that.
@@ -109,7 +127,7 @@ deathRatesDF <- XML_list_to_df(deathRatesDataXMLList)
 # deathRatesData <- tbl_df(deathRatesDataXML)
 ```
 
-```{r}
+```{r include=FALSE}
 # Fixing up the dataframe...
 deathRateData <- deathRatesDF %>% dplyr::transmute(Year = as.integer(year),
                                                    Race = as.factor(race),
@@ -120,4 +138,32 @@ deathRateData <- deathRatesDF %>% dplyr::transmute(Year = as.integer(year),
 ```
 
 # Exploratory data analysis
-## A graph
+
+## Tables
+Table 1: Cleaned data from the original XML dataset. Values of `NA` were introduced by coercion and remain in this table.
+
+Table 2: Average life expectancy and mortality by race.
+
+Table 3: Average life expectancy and mortality by sex.
+
+```{r}
+deathRateData %>% DT::datatable()
+
+# A custom function to integrate rounding with mean for use inside summarise().
+RoundedMean <- function(x, k){
+  return(round(mean(x, na.rm = TRUE), k))
+}
+
+deathRateData %>% group_by(Race) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Mortality Rate`=RoundedMean(Mort, 1)) %>% kable()
+
+deathRateData %>% group_by(Sex) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Mortality Rate`=RoundedMean(Mort, 1)) %>% kable()
+```
+
+
+## Graphs
+
+```{r}
+g <- ggplot(data = deathRateData, aes(x = Race, y = Mort))
+g + geom_boxplot() + geom_jitter(aes(color=Race)) + labs(y = "Mortality Rate per 100,000")
+```
+
