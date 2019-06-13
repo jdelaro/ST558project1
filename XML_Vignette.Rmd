@@ -59,10 +59,10 @@ See <https://cran.r-project.org/web/packages/XML/XML.pdf>
 
 # XML dataset
 
-The CDC uses the [Socrata Open Data API](https://dev.socrata.com/) for requests. However, the API token system was not working when I requested one. Fortunately, there was a way to aquire the file in raw XML format for download.
-
 Our dataset is hosted at the [Centers for Disease Control and Prevention](https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5
 ). There are 1044 observations of 5 variables: Year, Race, Sex, Average Life Expectancy, and Age-Adjusted Death Rate. The following descriptions are from the above website.
+
+The CDC uses the [Socrata Open Data API](https://dev.socrata.com/) for requests. However, the API token system was not working when I requested one. Fortunately, there was a way to aquire the file in raw XML format for download.
 
 **Variables**
 
