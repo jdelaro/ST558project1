@@ -69,8 +69,8 @@ Our dataset is hosted at the [Centers for Disease Control and Prevention](https:
 * Year: Dates from 1900 to 2015.
 * Race: White, Black, or Both Races.
 * Sex: Male, Female, or Both Sexes.
-* Average Life Expectancy: Not available for the Black population before 1960 because of the way racial categories are formed.
-* Age-Adjusted Death Rate: Calculated in a variety of ways based on timeframe. See <https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5>.
+* Average Life Expectancy: For dates prior to 1968, data are biased or otherwise unreliable because of the way racial categories are formed and underreporting. See <https://www.cdc.gov/nchs/nvss/mortality/hist293.htm>.
+* Age-Adjusted Death Rate: Calculated from the 2000 US standard population, in a variety of ways based on timeframe. See <https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5>.
 
 ```{r include=FALSE}
 library("XML")
@@ -210,12 +210,12 @@ g + geom_boxplot() + geom_jitter(aes(color=Race)) + labs(y = "Mortality Rate per
 
 #Line Plot by year 
 h <- ggplot(data = avgLEM, aes(x = Year, y = AvgLE))
-h + geom_line(color = 'green', lwd=1.2) + labs(title = "Average Life Expectancy by Year")
+h + geom_line(color = 'green', lwd=1) + labs(title = "Average Life Expectancy by Year")
 
 #Adjust dataset to combine sex and race into one column
 CombinedData <- AdjustedDeathRateData %>% unite(col= Race_Sex, Race, Sex, sep = "_")
 
 i <- ggplot(data = CombinedData, aes(x = Year, y = AveLifeExp, group(Race_Sex), fill = Race_Sex, color = Race_Sex))
-i + geom_line(lwd = 1.2)
+i + geom_line(lwd = 1)
 ```
 
