@@ -136,7 +136,24 @@ deathRateData <- deathRatesDF %>% dplyr::transmute(Year = as.integer(year),
                                                    Mort = as.double(mortality))
 
 ```
+```{r include=FALSE}
+# Creating new variable: Distance from year mean...
+avgLEM <- deathRateData[1:116,] %>% select(Year, AveLifeExp, Mort)
 
+# if(deathRateData$Year == avgLE$Year){
+#   deathRateData2 <- deathRateData %>% mutate(DistAvgLifeExp <- (AveLifeExp - avgLE$AveLifeExp))
+# }
+
+# yearAvgLifeExp <- deathRateData %>% group_by(Year) %>% summarise(mean(AveLifeExp))
+# 
+# yearAvgLifeExp <- deathRateData %>% select(Year, Race == "All Races", Sex == "Both Sexes")
+# 
+# if(deathRateData$Year == yearAvgLifeExp$Year){
+#   distFromMean <- deathRateData$AveLifeExp - yearAvgLifeExp$`mean(AveLifeExp)`
+# }
+# deathRateData2 <- deathRatesDF %>% dplyr::mutate(distFromMean )
+
+```
 # Exploratory data analysis
 
 ## Tables
@@ -146,8 +163,30 @@ Table 2: Average life expectancy and mortality by race.
 
 Table 3: Average life expectancy and mortality by sex.
 
+Table 4: Average life expectancy and mortality by year.
+(I did this to show the averages per year, I think we should include this as table 2)
+
 ```{r}
 deathRateData %>% DT::datatable()
+
+#Creating a table of just the average life expectancy and mortality rate per year. This is just the row of each year where both sexes and all races are used.
+avgLEM <- deathRateData[1:116,] %>% select(Year, AveLifeExp, Mort) %>% arrange(Year)
+DT::datatable(avgLEM)
+
+#Rename the variables to do a table join by year
+avgLEM <- avgLEM %>% rename(AvgLE = AveLifeExp, AvgMort = Mort)
+
+#Join dataset with avgLEM table to be able to subtract the mean life expectancy for each year
+df <- merge(deathRateData, avgLEM, by = "Year")
+
+#Create new variables for distance from mean of each year for each subgroup
+df2 <- df %>% mutate(DistFromMeanLE = round((AveLifeExp - AvgLE),1), DistFromMeanMort = round((Mort - AvgMort),1))
+
+#Remove AvgLE and AvgMort variables from datatable and filter the rows to not include the mean observations (observations with Both Sexes and All Races)
+AdjustedDeathRateData <- df2 %>% 
+              select(Year, Race, Sex, AveLifeExp, Mort, DistFromMeanLE, DistFromMeanMort) %>%
+              filter(Race != "All Races" | Sex != "Both Sexes")
+DT::datatable(AdjustedDeathRateData, caption = "Life Expectancy and Mortality by Race and Sex ")
 
 # A custom function to integrate rounding with mean for use inside summarise().
 RoundedMean <- function(x, k){
@@ -157,6 +196,8 @@ RoundedMean <- function(x, k){
 deathRateData %>% group_by(Race) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Mortality Rate`=RoundedMean(Mort, 1)) %>% kable()
 
 deathRateData %>% group_by(Sex) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Mortality Rate`=RoundedMean(Mort, 1)) %>% kable()
+
+
 ```
 
 
@@ -165,5 +206,16 @@ deathRateData %>% group_by(Sex) %>% summarise(`Mean Life Expectancy`=RoundedMean
 ```{r}
 g <- ggplot(data = deathRateData, aes(x = Race, y = Mort))
 g + geom_boxplot() + geom_jitter(aes(color=Race)) + labs(y = "Mortality Rate per 100,000")
+
+
+#Line Plot by year 
+h <- ggplot(data = avgLEM, aes(x = Year, y = AvgLE))
+h + geom_line(color = 'green') + labs(title = "Average Life Expectancy by Year")
+
+#Adjust dataset to combine sex and race into one column
+CombinedData <- AdjustedDeathRateData %>% unite(col= Race_Sex, Race, Sex, sep = "_")
+
+i <- ggplot(data = CombinedData, aes(x = Year, y = AveLifeExp, group(Race_Sex), fill = Race_Sex, color = Race_Sex))
+i + geom_line()
 ```
 
