@@ -45,7 +45,8 @@ library(tidyr)
 XML stands for extensible markup language. It is a method of formatting and structuring data to be able to easily share the data online. XML data is self describing, which means that the structure of the data as well as the data are embedded in the file. Therefore, an XML file contains the metadata that describes the data in addition to the actual data, which allows for the data to be read in and stored without building the structure of the data.
 Source: [TechTarget](https://searchmicroservices.techtarget.com/definition/XML-Extensible-Markup-Language)
 
-XML is a format that can 
+XML is a format that is commonly used to provide files by API. For example, [SAX](https://searchmicroservices.techtarget.com/definition/SAX-Simple-API-for-XML) and [REST](https://blogs.mulesoft.com/dev/howto/build-rest-api-with-xml-payload/) both handle XML files. Other web services benefit from XML as a format because it allows for interactive and customizable user interfaces and is standardized internationally. 
+Sources: [lifewire](https://www.lifewire.com/reasons-to-use-xml-3471386) and [IBM](https://www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_71/rzamj/rzamjintrouses.htm).
 
 
 # XML packages and functions
