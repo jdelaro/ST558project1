@@ -1,7 +1,7 @@
 ---
 title: "XML Vignette"
 author: "Steven Miller and Clayton Ramsey"
-date: "June 9, 2019"
+date: "June 13, 2019"
 output: 
   html_document:
     toc: true
@@ -45,7 +45,8 @@ library(tidyr)
 XML stands for extensible markup language. It is a method of formatting and structuring data to be able to easily share the data online. XML data is self describing, which means that the structure of the data as well as the data are embedded in the file. Therefore, an XML file contains the metadata that describes the data in addition to the actual data, which allows for the data to be read in and stored without building the structure of the data.
 Source: [TechTarget](https://searchmicroservices.techtarget.com/definition/XML-Extensible-Markup-Language)
 
-XML is a format that can 
+XML is a format that is commonly used to provide files by API. For example, [SAX](https://searchmicroservices.techtarget.com/definition/SAX-Simple-API-for-XML) and [REST](https://blogs.mulesoft.com/dev/howto/build-rest-api-with-xml-payload/) both handle XML files. Other web services benefit from XML as a format because it allows for interactive and customizable user interfaces and is standardized internationally. 
+Sources: [lifewire](https://www.lifewire.com/reasons-to-use-xml-3471386) and [IBM](https://www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_71/rzamj/rzamjintrouses.htm).
 
 
 # XML packages and functions
@@ -59,18 +60,27 @@ See <https://cran.r-project.org/web/packages/XML/XML.pdf>
 
 # XML dataset
 
-The CDC uses the [Socrata Open Data API](https://dev.socrata.com/) for requests. However, the API token system was not working when I requested one. Fortunately, there was a way to aquire the file in raw XML format for download.
-
 Our dataset is hosted at the [Centers for Disease Control and Prevention](https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5
 ). There are 1044 observations of 5 variables: Year, Race, Sex, Average Life Expectancy, and Age-Adjusted Death Rate. The following descriptions are from the above website.
+
+The CDC uses the [Socrata Open Data API](https://dev.socrata.com/) for requests. However, the API token system was not working when I requested one. Fortunately, there was a way to aquire the file in raw XML format for download.
 
 **Variables**
 
 * Year: Dates from 1900 to 2015.
 * Race: White, Black, or Both Races.
 * Sex: Male, Female, or Both Sexes.
-* Average Life Expectancy: For dates prior to 1968, data are biased or otherwise unreliable because of the way racial categories are formed and underreporting. See <https://www.cdc.gov/nchs/nvss/mortality/hist293.htm>.
-* Age-Adjusted Death Rate: Calculated from the 2000 US standard population, in a variety of ways based on timeframe. See <https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5>.
+* Average Life Expectancy: Not available for the Black population before 1960 because of the way racial categories are formed.
+* Age-Adjusted Death Rate: Calculated in a variety of ways based on timeframe. See <https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5>.
+
+Note: Age-adjusted death rate is the number of deaths per 100,000 people and is adjusted for a standard population of ages for each group.
+
+**Variables Created**
+
+We also decided to create two variables to better understand trends in the data. These variables are average distance from the mean life expectancy and average distance from the mean age-adjusted death rate for each year. These were calculated by subtracting the average life expectancy for each year from all observations from that year. This was repeated for the average age-adjusted death rate as well.
+
+* Distance from Mean Life Expectancy: The overall year mean life expectancy subtracted from each subgroup from that year
+* Distance from Mean Age-Adjusted Death Rate: The overall year mean age-adjusted death rate subtracted from each subgroup from that year
 
 ```{r include=FALSE}
 library("XML")
@@ -135,10 +145,32 @@ deathRateData <- deathRatesDF %>% dplyr::transmute(Year = as.integer(year),
                                              AveLifeExp = as.double(average_life_expectancy),
                                                    Mort = as.double(mortality))
 
+
+deathRateData3 <- deathRateData %>% filter(Race != "All Races" | Sex != "Both Sexes")
+
 ```
 ```{r include=FALSE}
-# Creating new variable: Distance from year mean...
+# Creating new variables: Distance from year mean...
 avgLEM <- deathRateData[1:116,] %>% select(Year, AveLifeExp, Mort)
+
+#Creating a table of just the average life expectancy and mortality rate per year. This is just the row of each year where both sexes and all races are used.
+avgLEM <- deathRateData[1:116,] %>% select(Year, AveLifeExp, Mort) %>% arrange(Year)
+
+#Rename the variables to do a table join by year
+avgLEM <- avgLEM %>% rename(AvgLE = AveLifeExp, AvgMort = Mort)
+
+#Join dataset with avgLEM table to be able to subtract the mean life expectancy for each year
+df <- merge(deathRateData, avgLEM, by = "Year")
+
+#Create new variables for distance from mean of each year for each subgroup
+df2 <- df %>% mutate(DistFromMeanLE = round((AveLifeExp - AvgLE),1), DistFromMeanMort = round((Mort - AvgMort),1))
+
+#Remove AvgLE and AvgMort variables from datatable and filter the rows to not include the mean observations (observations with Both Sexes and All Races)
+AdjustedDeathRateData <- df2 %>% 
+              select(Year, Race, Sex, AveLifeExp, Mort, DistFromMeanLE, DistFromMeanMort) %>%
+              filter(Race != "All Races" | Sex != "Both Sexes")
+DT::datatable(AdjustedDeathRateData, caption = "Table 3: Life Expectancy and Mortality by Race and Sex  with New Variables")
+
 
 # if(deathRateData$Year == avgLE$Year){
 #   deathRateData2 <- deathRateData %>% mutate(DistAvgLifeExp <- (AveLifeExp - avgLE$AveLifeExp))
@@ -157,45 +189,50 @@ avgLEM <- deathRateData[1:116,] %>% select(Year, AveLifeExp, Mort)
 # Exploratory data analysis
 
 ## Tables
-Table 1: Cleaned data from the original XML dataset. Values of `NA` were introduced by coercion and remain in this table.
 
-Table 2: Average life expectancy and mortality by race.
+### Table 1 
 
-Table 3: Average life expectancy and mortality by sex.
+Cleaned "death rate data" from the original XML dataset  
+Note: Values of `NA` were introduced by coercion and remain in this table.
 
-Table 4: Average life expectancy and mortality by year.
-(I did this to show the averages per year, I think we should include this as table 2)
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+deathRateData %>% DT::datatable(caption = "Table 1: Life Expectancy and Age-Adjusted Death Rate Data Set")
+```
 
-```{r}
-deathRateData %>% DT::datatable()
+### Table 2  
 
-#Creating a table of just the average life expectancy and mortality rate per year. This is just the row of each year where both sexes and all races are used.
-avgLEM <- deathRateData[1:116,] %>% select(Year, AveLifeExp, Mort) %>% arrange(Year)
-DT::datatable(avgLEM)
+The average life expectancy and age-adjusted death rates for each year from 1900 to 2015
 
-#Rename the variables to do a table join by year
-avgLEM <- avgLEM %>% rename(AvgLE = AveLifeExp, AvgMort = Mort)
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Table of Average Life Expectancies and Average Age-Adjusted Death Rates by Year
+DT::datatable(avgLEM, colnames = c("Year", "Average Life Expectancy", "Average Age-Adjusted Death Rate"),caption = "Table 2: Average Life Expectancy and Age-Adjusted Death Rate by Year")
+```
 
-#Join dataset with avgLEM table to be able to subtract the mean life expectancy for each year
-df <- merge(deathRateData, avgLEM, by = "Year")
+### Table 3  
 
-#Create new variables for distance from mean of each year for each subgroup
-df2 <- df %>% mutate(DistFromMeanLE = round((AveLifeExp - AvgLE),1), DistFromMeanMort = round((Mort - AvgMort),1))
+Adjusted data set to include created variables (distance from mean life expectancy and distance from mean age-adjusted death rate)
 
-#Remove AvgLE and AvgMort variables from datatable and filter the rows to not include the mean observations (observations with Both Sexes and All Races)
-AdjustedDeathRateData <- df2 %>% 
-              select(Year, Race, Sex, AveLifeExp, Mort, DistFromMeanLE, DistFromMeanMort) %>%
-              filter(Race != "All Races" | Sex != "Both Sexes")
-DT::datatable(AdjustedDeathRateData, caption = "Life Expectancy and Mortality by Race and Sex ")
-
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+DT::datatable(AdjustedDeathRateData, caption = "Table 3: Life Expectancy and Age-Adjusted Death Rate by Race and Sex with New Variables")
+```
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # A custom function to integrate rounding with mean for use inside summarise().
 RoundedMean <- function(x, k){
   return(round(mean(x, na.rm = TRUE), k))
 }
+```
 
-deathRateData %>% group_by(Race) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Mortality Rate`=RoundedMean(Mort, 1)) %>% kable()
+### Tables 4 and 5  
 
-deathRateData %>% group_by(Sex) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Mortality Rate`=RoundedMean(Mort, 1)) %>% kable()
+Average life expectancy and age-adjusted death rate by race and sex
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+deathRateData %>% group_by(Race) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Age-Adjusted Death Rate`=RoundedMean(Mort, 1)) %>% kable(caption = "Table 4: Average life expectancy and age-adjusted death rate by race")
+
+# meanAdjustedDeathRateData %>% group_by(Race) %>% summarise(`Mean Life Expectancy`=RoundedMean(meanLifeExpectancy, 1), `Average Age-Adjusted Death Rate`=RoundedMean(meanMort, 1)) %>% kable(caption = "Table 4: Average life expectancy and age-adjusted death rate by race")
+
+deathRateData %>% group_by(Sex) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Age-Adjusted Death Rate`=RoundedMean(Mort, 1)) %>% kable(caption = "Table 5: Average life expectancy and age-adjusted death rate by sex")
 
 
 ```
@@ -203,19 +240,183 @@ deathRateData %>% group_by(Sex) %>% summarise(`Mean Life Expectancy`=RoundedMean
 
 ## Graphs
 
-```{r}
-g <- ggplot(data = deathRateData, aes(x = Race, y = Mort))
-g + geom_boxplot() + geom_jitter(aes(color=Race)) + labs(y = "Mortality Rate per 100,000")
+### Relationship between Life Expectancy and Age-Adjusted Death Rate
 
+#### Scatterplot of Life Expectancy vs. Age-Adjusted Death Rate
 
-#Line Plot by year 
-h <- ggplot(data = avgLEM, aes(x = Year, y = AvgLE))
-h + geom_line(color = 'green', lwd=1) + labs(title = "Average Life Expectancy by Year")
+The scatterplot comparing life expectancy to age-adjusted death rate shows a negative relationship between the two. This makes sense because as life expectancy increases, we would expect the age-adjusted death rate to decrease because less people are dying.
 
-#Adjust dataset to combine sex and race into one column
-CombinedData <- AdjustedDeathRateData %>% unite(col= Race_Sex, Race, Sex, sep = "_")
-
-i <- ggplot(data = CombinedData, aes(x = Year, y = AveLifeExp, group(Race_Sex), fill = Race_Sex, color = Race_Sex))
-i + geom_line(lwd = 1)
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Scatterplot of Life Expectancy vs. Age-Adjusted Death Rate
+m <- ggplot(data = deathRateData, aes(x = AveLifeExp, y = Mort))
+m + geom_point(color = "navy blue") + 
+     geom_smooth(method = lm, col = "gold", se = TRUE) + 
+     labs(title = "Life Expectancy vs. Age-Adjusted Death Rate Scatterplot", 
+       x = "Life Expectancy", y = "Age-Adjusted Death Rate")
 ```
 
+
+### Analysis by Year
+
+#### Line Plots
+
+The line plots show a clear trend in both life expectancy and age-adjusted death rate by year. The first line plot shows that there is a steady increase in life expectancy as the year increases. The only time there is a significant drop in life expectancy from one year to the next is in 1918, and this can be attriuted to the influenza epidemic that killed many people. Conversely, there is a steady decline in age-adjusted death rates as the year increases, which makes sense because people are living longer, and less people are dying.
+
+The next two line plots show the trends in life expectancy and age-adjusted death rate for each group of race and sex as the years increase. It is evident that white females have the highest life expectancy and lowest age-adjusted death rate, while black males have the lowest life expectancy and highest age-adjusted death rate. This will be confirmed by future graphs.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Line Plots by year 
+h1 <- ggplot(data = avgLEM, aes(x = Year, y = AvgLE))
+h1 + geom_line(color = 'dark orange', size=1) + labs(title = "Average Life Expectancy by Year", y = "Average Life Expectancy")
+
+h2 <- ggplot(data = avgLEM, aes(x = Year, y = AvgMort))
+h2 + geom_line(color = 'blue', size=1) + labs(title = "Average Age-Adjusted Death Rate by Year", y = "Average Age-Adusted Death Rate")
+
+#Adjust dataset to combine sex and race into one column
+CombinedData <- AdjustedDeathRateData %>% unite(col= Race_Sex, Race, Sex, sep = "/")
+
+#Line plots for yearly life expectancy and yearly age-adjusted death rates
+i1 <- ggplot(data = CombinedData, 
+            aes(x = Year, y = AveLifeExp, group(Race_Sex), fill = Race_Sex, color = Race_Sex))
+i1 + geom_line(size=.75) +
+    labs(title = "Yearly Average Life Expectancy by Race and Sex", 
+         y = "Average Life Expectancy") +
+    scale_fill_discrete(name = "Race/Sex Combinations",
+                        labels = c("Female", "Male", "Black", "Black/Female", "Black/Male", "White",
+                                   "White/Female", "White/Male"))
+
+i2 <- ggplot(data = CombinedData, 
+            aes(x = Year, y = Mort, group(Race_Sex), fill = Race_Sex, color = Race_Sex))
+i2 + geom_line(size=.75) +
+    labs(title = "Yearly Average Age-Adjusted Death Rate by Race and Sex", 
+         y = "Average Age-Adjusted Death Rate") +
+    scale_fill_discrete(name = "Race/Sex Combinations",
+                        labels = c("Female", "Male", "Black", "Black/Female", "Black/Male", "White",
+                                   "White/Female", "White/Male"))
+```
+
+### Life Expectancy and Age-Adjusted Death Rate Analysis
+
+#### Boxplots
+
+The boxplots show the trends in life expectancy and age-adjusted death rate for both race and sex. These boxplots show that the average life expectancy is higher for females than males and higher for white people than black people, while the average age-adjusted death rate is lower for females than males and lower for white people than black people.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Box plots with jitter points overlaid
+g1 <- ggplot(data = deathRateData, aes(x = Race, y = AveLifeExp))
+g1 + geom_boxplot() + geom_jitter(aes(color=Race)) +
+     labs(title = "Life Expectancy by Race Boxplot", y = "Average Life Expectancy")
+
+g2 <- ggplot(data = deathRateData, aes(x = Sex, y = AveLifeExp))
+g2 + geom_boxplot() + geom_jitter(aes(color=Sex)) +
+     labs(title = "Life Expectancy by Sex Boxplot", y = "Average Life Expectancy")
+
+
+g3 <- ggplot(data = deathRateData, aes(x = Race, y = Mort))
+g3 + geom_boxplot() + geom_jitter(aes(color=Race)) + 
+     labs(title = "Age-Adjusted Death Rate by Race", y = "Age-Adjusted Death Rate per 100,000")
+
+g4 <- ggplot(data = deathRateData, aes(x = Sex, y = Mort))
+g4 + geom_boxplot() + geom_jitter(aes(color=Sex)) + 
+     labs(title = "Age-Adjusted Death Rate by Sex", y = "Age-Adjusted Death Rate per 100,000")
+```
+
+#### Side-By-Side Bar Plots
+
+The side-by-side bar plots give a good visual representation of average life expectancy and average age-adjusted death rate by sex and race. These plots give more evidence that the females have a greater life expectancy than males, and white people have a greater life expectancy than black people. White females have the highest life expectancy, followed by white males, then black females, and finally black males. The opposite is true for average age-adjusted death rate. White females have the lowest death rate, followed by white males, then black females, and finally black males.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#Side by side bar plots of life expectancy by sex grouped by race
+#First, must find means of life expectancy and age-adjusted death rate by group
+#Find means of each group for all 4 quantitative variables in AdjustedDeathRateData
+
+meanAdjustedDeathRateData <- AdjustedDeathRateData %>% group_by(Sex, Race) %>% 
+                    summarise(meanLifeExpectancy = RoundedMean(AveLifeExp, 1),
+                              meanMort = RoundedMean(Mort, 1),
+                              avgDistFromMeanLE = RoundedMean(DistFromMeanLE, 1), 
+                              avgDistFromMeanMort = RoundedMean(DistFromMeanMort, 1))
+
+######TRYING TO FIGURE OUT WHY OUR MEANS DONT MATCH FROM OUR TABLES AND GRAPHS###########
+
+# a1 <- ggplot(meanAdjustedDeathRateData, aes(x = Sex, y = meanLifeExpectancy, fill = Sex))
+# a1 + geom_bar(aes(fill = Sex, y = meanLifeExpectancy), stat = "identity", position = "dodge") + 
+#      labs(title = "Bar Plot of Average Life Expectancy by Sex", y = "Average Life Expectancy") +
+#      coord_cartesian(ylim=c(50,71))
+# 
+# a2 <- ggplot(meanAdjustedDeathRateData, aes(x = Race, y = meanLifeExpectancy, fill = Race))
+# a2 + geom_bar(aes(fill = Race, y = meanLifeExpectancy), stat = "identity", position = "dodge") + 
+#      labs(title = "Bar Plot of Average Life Expectancy by Race", y = "Average Life Expectancy") +
+#      coord_cartesian(ylim=c(50,71))
+#################
+
+n1 <- ggplot(meanAdjustedDeathRateData, aes(x = Sex, y = meanLifeExpectancy, fill = Race))
+n1 + geom_bar(aes(fill = Race, y = meanLifeExpectancy), stat = "identity", position = "dodge") + 
+     labs(title = "Side-by-Side Bar Plot of Average Life Expectancy", y = "Average Life Expectancy") +
+     coord_cartesian(ylim=c(50,71))
+
+n2 <- ggplot(meanAdjustedDeathRateData, aes(x = Sex, y = meanMort, fill = Race))
+n2 + geom_bar(aes(fill = Race, y = meanMort), stat = "identity", position = "dodge") + 
+     labs(title = "Side-by-Side Bar Plot of Average Age-Adjusted Death Rate", y = "Average Age-Adjusted Death Rate")
+
+```
+
+### Distance from Mean Life Expectancy and Age-Adjusted Death Rate Analysis
+
+#### Side-By-Side Bar Plots
+
+These last side-by-side bar plots are similar to the previous ones, but they look at the new variables we created. The mean life expectancy and age-adjusted death rate were take for each year and then these values were subtracted from all of the observations from this year, giving us a distance from the mean for the two variables for every year. The bar graphs show the mean distances from the mean for all of our sex and race combinations. On average, black people have a life expectancy of eight years lower than the average, while white people are about one year above the average. Females are nearly three years above the average, and males are nearly three years below it. On average, black males have a life expectancy of nearly 11 years less than the average life expectancy.
+
+The side-by-side bar plot of average distance from mean age-adjusted death rate shows a similar pattern. On average, black males have a death rate of about 625 more deaths per 100000 people than the average. White females have about 200 less deaths per 100000 people than the average.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#Bar Plots of average distance from year mean for each group
+#Use meanAdjustedDeathRate data frame 
+
+#Side-by-side Bar Plot of average distance from mean life expectancy
+k1 <- ggplot(data = meanAdjustedDeathRateData, aes(x = Sex, y = avgDistFromMeanLE, fill = Race))
+k1 + geom_bar(aes(fill = Race, y = avgDistFromMeanLE), stat = "identity", position = "dodge") +
+    labs(title = "Mean Distance from Average Life Expectancy by Race and Sex", x = "Race", 
+         y = "Mean Distance from Average Life Expectancy")
+
+#Side-by-side Bar Plot of average distance from mean Mortality
+k2 <- ggplot(data = meanAdjustedDeathRateData, aes(x = Sex, y = avgDistFromMeanMort, fill = Race))
+k2 + geom_bar(aes(fill = Race, y = avgDistFromMeanMort), stat = "identity", position = "dodge") +
+    labs(title = "Mean Distance from Average Age-Adjusted Death Rate by Race and Sex", x = "Race", 
+         y = "Mean Distance from Average Age-Adjusted Death Rate")
+
+# meanCombinedData <- CombinedData %>% group_by(Race_Sex) %>% 
+#                     summarise(avgDistLE = round(mean(DistFromMeanLE, na.rm = TRUE),1), 
+#                               avgDistMort = round(mean(DistFromMeanMort), 1))
+# 
+# 
+# j1 <- ggplot(data = meanCombinedData, aes(x = Race_Sex, y = avgDistLE))
+# j1 + geom_bar(aes(fill = Race_Sex, y = avgDistLE), stat = "identity") +
+#     labs(title = "Mean Distance from Average Life Expectancy by Race and Sex", x = "Race/Sex", 
+#          y = "Mean Distance from Average Life Expectancy") +
+#     scale_x_discrete(name = "Race/Sex Combinations", 
+#                      labels = c("Female", "Male", "Black", "Black/F", "Black/M", "White",
+#                               "White/F", "White/M")) +
+#     scale_fill_discrete(name = "Race/Sex Combinations", 
+#                         labels = c("Female", "Male", "Black", "Black/Female", "Black/Male", "White",
+#                                 "White/Female", "White/Male"))
+# 
+# #Bar Plot of average distance from mean Mortality
+# j2 <- ggplot(data = meanCombinedData, aes(x = Race_Sex, y = avgDistMort))
+# j2 + geom_bar(aes(fill = Race_Sex, y = avgDistMort), stat = "identity") +
+#     labs(title = "Mean Distance from Average Age-Adjusted Death Rate by Race and Sex", x = "Race/Sex", 
+#          y = "Mean Distance from Average Age-Adjusted Death Rate") +
+#     scale_x_discrete(name = "Race/Sex Combinations", 
+#                      labels = c("Female", "Male", "Black", "Black/F", "Black/M", "White",
+#                               "White/F", "White/M")) +
+#     scale_fill_discrete(name = "Race/Sex Combinations", 
+#                         labels = c("Female", "Male", "Black", "Black/Female", "Black/Male", "White",
+#                                 "White/Female", "White/Male"))
+
+```
+
+# Conclusions
+
+Our dataset gives evidence to support a significant difference between life expectancy of different groups of people. This is directly correlated to the difference in age-adjusted death rates of different groups of people. Our scatterplot shows there is a negative relationship between the life expectancy and age-adjusted death rate, which means as life expectancy increase, death rate decreases. We could see in our line plots that there has been a steady increase in life expectancy and decrease in death rate as the years have gotten closer to present day. All of our exploratory evidence points to white females having the highest life expectancy and black males having the lowest life expectancy. Our new variables show the average distance each group is from the mean, which really helps put the numbers into perspective. Black people live significantly shorter lives than the average person, while females live significantly longer lives than the average person. 
