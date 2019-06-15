@@ -70,9 +70,8 @@ The CDC uses the [Socrata Open Data API](https://dev.socrata.com/) for requests.
 * Year: Dates from 1900 to 2015.
 * Race: White, Black, or Both Races.
 * Sex: Male, Female, or Both Sexes.
-* Average Life Expectancy: Not available for the Black population before 1960 because of the way racial categories are formed.
-* Age-Adjusted Death Rate: Calculated in a variety of ways based on timeframe. See <https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5>.
-
+* Average Life Expectancy: For dates prior to 1968, data are biased or otherwise unreliable because of the way racial categories are formed and underreporting. See <https://www.cdc.gov/nchs/nvss/mortality/hist293.htm>.
+* Age-Adjusted Death Rate: Calculated from the 2000 US standard population, in a variety of ways based on timeframe. See <https://data.cdc.gov/NCHS/NCHS-Death-rates-and-life-expectancy-at-birth/w9j2-ggv5>.
 Note: Age-adjusted death rate is the number of deaths per 100,000 people and is adjusted for a standard population of ages for each group.
 
 **Variables Created**
@@ -216,6 +215,7 @@ Adjusted data set to include created variables (distance from mean life expectan
 DT::datatable(AdjustedDeathRateData, caption = "Table 3: Life Expectancy and Age-Adjusted Death Rate by Race and Sex with New Variables")
 ```
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
 # A custom function to integrate rounding with mean for use inside summarise().
 RoundedMean <- function(x, k){
   return(round(mean(x, na.rm = TRUE), k))
