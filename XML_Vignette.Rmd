@@ -260,7 +260,7 @@ m + geom_point(color = "navy blue") +
 
 #### Line Plots
 
-The line plots show a clear trend in both life expectancy and age-adjusted death rate by year. The first line plot shows that there is a steady increase in life expectancy as the year increases. The only time there is a significant drop in life expectancy from one year to the next is in 1918, and this can be attriuted to the influenza epidemic that killed many people. Conversely, there is a steady decline in age-adjusted death rates as the year increases, which makes sense because people are living longer, and less people are dying.
+The line plots show a clear trend in both life expectancy and age-adjusted death rate by year. The first line plot shows that there is a steady increase in life expectancy as the year increases. The only time there is a significant drop in life expectancy from one year to the next is in 1918, and this can be attributed to the influenza pandemic that killed many people. Conversely, there is a steady decline in age-adjusted death rates as the year increases, which makes sense because people are living longer, and less people are dying.
 
 The next two line plots show the trends in life expectancy and age-adjusted death rate for each group of race and sex as the years increase. It is evident that white females have the highest life expectancy and lowest age-adjusted death rate, while black males have the lowest life expectancy and highest age-adjusted death rate. This will be confirmed by future graphs.
 
@@ -355,6 +355,7 @@ n1 <- ggplot(meanAdjustedDeathRateData, aes(x = Sex, y = meanLifeExpectancy, fil
 n1 + geom_bar(aes(fill = Race, y = meanLifeExpectancy), stat = "identity", position = "dodge") + 
      labs(title = "Side-by-Side Bar Plot of Average Life Expectancy", y = "Average Life Expectancy") +
      coord_cartesian(ylim=c(50,71))
+
 
 n2 <- ggplot(meanAdjustedDeathRateData, aes(x = Sex, y = meanMort, fill = Race))
 n2 + geom_bar(aes(fill = Race, y = meanMort), stat = "identity", position = "dodge") + 
