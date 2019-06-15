@@ -27,10 +27,10 @@ Ever increasing concerns of the state of the Earth's climate has led many a mete
 First, we'll demonstrate how easy it is to pull data from a JSON file into R using the `fromJSON` function and then show what the data frame looks like before describing what the variables represent.
 ```{r setup, include=TRUE, warning=FALSE, message=FALSE}
 library(tidyverse)
-library(jsonlite)
+library(jsonlite)            #activating tidyverse for data wrangling and jsonlite for reading in data
 
 RaleighJson <- fromJSON("C:/Users/Jesse DeLaRosa/Desktop/Project/Grad School/ST 558 Data Science for Statisticians/Project 1/earth-surface-temperature-data0.json")
-head(RaleighJson)
+head(RaleighJson)            #reading in temperature data from JSON file. Showing first few obs to demonstrate success
 ```
 
 The `city`, `country`, `latitude`, and `longitude` values correspond to where the data is coming from. Since the good people of Chapel Hill only pulled the Raleigh data, however, all of these values are the same across the 3,239 records we're working with. `Average temperature` is the average temperature of the day, `dt` is the date the data was recorded, and `Average temperature uncertainty` corresponds to the measured accuracy of the measurement. 
@@ -38,12 +38,12 @@ The `city`, `country`, `latitude`, and `longitude` values correspond to where th
 We'll convert this data frame to a tibble before we continue, to make the data easier to work with `tidyverse`.
 
 ```{r Raleightibble, eval=TRUE, echo=FALSE, warning = FALSE}
-Raleightibble <- tbl_df(RaleighJson)
+Raleightibble <- tbl_df(RaleighJson)        #creates tibble version of Raleigh data
 Raleightibble
 ```
 
 ```{r Citydata, eval=TRUE, echo=FALSE, warning = FALSE}
-unique(Raleightibble$city)
+unique(Raleightibble$city)                 #uses categorical city variable to show it's only for Raleigh
 ```
 
 While the dataset that Chapel Hill compiled this data from is much, much larger than the 3000 observations we'll work with here, the JSON file they created from Berkeley Earth was specifically for Raleigh. So we'll focus on variations in temperature across different points in time and seasons. First, howevever, several new variables will need to be created in order to execute such analyses.
@@ -54,20 +54,21 @@ With growing concerns about temperature changes over time, having a data set tha
 
 ```{r Raleighdatemod, eval = TRUE, echo =FALSE, warning = FALSE}
 MonthYearandSeason <- function(df, ...){
-  df2 <- df %>% mutate("Year" = as.integer(substr(dt, 1, 4)))
-  df3 <- df2 %>% mutate("Month" = as.integer(substr(dt, 6, 7)))
-  df4 <- df3 %>% mutate("Season" = ifelse(Month > 2 & Month < 6, "Spring",
-                                   ifelse(Month > 5 & Month < 9, "Summer",
-                                  ifelse(Month > 8 & Month < 12, "Fall", "Winter"))))
-  df5 <- df4 %>% mutate("YearRange" = ifelse(Year > 1742 & Year < 1793, "1743-1792",
-                                      ifelse(Year > 1792 & Year < 1843, "1793-1842",
+  df2 <- df %>% mutate("Year" = as.integer(substr(dt, 1, 4)))     #uses part of datetime var to determine year
+  df3 <- df2 %>% mutate("Month" = as.integer(substr(dt, 6, 7)))   #uses part of datetime var to determine month
+  df4 <- df3 %>% mutate("Season" = ifelse(Month > 2 & Month < 6, "Spring",               #if Month 3 to 5, spring
+                                   ifelse(Month > 5 & Month < 9, "Summer",               #if Month 6 to 8, summer
+                                  ifelse(Month > 8 & Month < 12, "Fall", "Winter"))))    #if Month 9 to 10, Fall,
+                                                                                         #otherwise its a Winter month
+  df5 <- df4 %>% mutate("YearRange" = ifelse(Year > 1742 & Year < 1793, "1743-1792",     #create year ranges based on
+                                      ifelse(Year > 1792 & Year < 1843, "1793-1842",     #well, what year the obs is
                                       ifelse(Year > 1842 & Year < 1893, "1843-1892",
                                       ifelse(Year > 1892 & Year < 1943, "1893-1942",
                                       ifelse(Year > 1942 & Year < 1993, "1943-1992", "1993-2013"))))))
   return(df5)
 }
-Raleigh <- MonthYearandSeason(Raleightibble)
-Raleigh[, 7:10]
+Raleigh <- MonthYearandSeason(Raleightibble)                        #saves new vars to existing dataset
+Raleigh[, 7:10]                                                     #shows new vars in dataset
 ```
 
 ### Numeric summaries
@@ -79,14 +80,14 @@ To start with, let's look at how spread out the observations are across `Year ra
 ##### Year Range Distribution
 
 ```{r Raleighrangetable, eval=TRUE, echo=FALSE, warning = FALSE}
-tab <- table(Raleigh$YearRange)
+tab <- table(Raleigh$YearRange)                #summary of how many obs are in each Year Range
 knitr::kable(tab, col.names = c("Year Range", "# of Observations"), caption = "Distribution of Observations across Year Ranges")
 ```
 
 ```{r Raleighrangeplot, eval=TRUE, echo=FALSE}
-preG <- Raleigh %>% group_by(YearRange) %>% summarise(count = n())
-g <- ggplot(data = preG, aes(x = YearRange, y = count))
-g + geom_bar(aes(fill = YearRange), stat = "identity", show.legend = FALSE)
+preG <- Raleigh %>% group_by(YearRange) %>% summarise(count = n())     #group counts by each year range
+g <- ggplot(data = preG, aes(x = YearRange, y = count))               #create a plot with yearrange in x, count in y
+g + geom_bar(aes(fill = YearRange), stat = "identity", show.legend = FALSE) #take this data and make it a bar graph
 ```
 
 It appears we have a fairly consistent distribution across all the year ranges, except for notably the latest range, likely due to the smaller scope of its range. 
@@ -94,14 +95,14 @@ It appears we have a fairly consistent distribution across all the year ranges, 
 ##### Season Distribution
 
 ```{r Raleighseasontable, eval=TRUE, echo=FALSE, warning = FALSE}
-tab <- table(Raleigh$Season)
+tab <- table(Raleigh$Season)          #show counts for how many obs are in each Season
 knitr::kable(tab, col.names = c("Season", "# of Observations"), caption = "Distribution of Observations across Seasons")
 ```
 
 ```{r Raleighseasonplot, eval=TRUE, echo=FALSE}
-preG <- Raleigh %>% group_by(Season) %>% summarise(count = n())
-g <- ggplot(data = preG, aes(x = Season, y = count))
-g + geom_bar(aes(fill = Season), stat = "identity", show.legend = FALSE)
+preG <- Raleigh %>% group_by(Season) %>% summarise(count = n())      #group counts by Season
+g <- ggplot(data = preG, aes(x = Season, y = count))                 #create a plot with Season in x, count in y
+g + geom_bar(aes(fill = Season), stat = "identity", show.legend = FALSE) #take this data and make it a bar graph
 ```
 
 Fortunately, the seasons are uniformally distributed. In this case, it means that while we created the variables of `Year Range` and `Season`, the uniform or near uniform distributions of both mean further evaluations aren't much skewed across conditions.
@@ -115,8 +116,10 @@ Let's start visualizing our data by asking the simple question: does it appear t
 ##### Average Temperature across years
 
 ```{r avgtempacrossyear, eval=TRUE, echo=FALSE, warning = FALSE, message = FALSE}
+#take means of average temperatures for each Year
 preG <- Raleigh %>% group_by(Year) %>% summarise(`Average Mean Temperature`= mean(averagetemperature, na.rm = TRUE))
 g <- ggplot(data = preG, aes(Year, `Average Mean Temperature`))
+#make a scatterplot with line of best fit for these means
 g + geom_point(color = "darkorange", stat = "identity") + scale_y_continuous(limits = c(13,16)) + geom_smooth()
 ```
 
@@ -129,8 +132,10 @@ While there appears to be an upward trend over time, there's a great apparent va
 Here we'll look at the average temperatures across year ranges. This could get graphic...
 
 ```{r avgtempacrossrange, eval=TRUE, echo=FALSE, warning = FALSE, message = FALSE}
-g <- ggplot(data = Raleigh, aes(YearRange, averagetemperature))
-g + geom_boxplot(aes(color = YearRange), show.legend = TRUE ) + scale_fill_discrete(name = "Year Range") + ggtitle("Average Temperature across Year Range") 
+#make plot of average temperatures for each Year Range
+g <- ggplot(Raleigh, aes(YearRange, averagetemperature), show.legend = TRUE)
+#make this a box plot, with a line graph going across it for each season
+g + geom_boxplot(aes(color = YearRange)) + stat_summary(fun.y = mean, geom = "line", lwd = .75, aes(group = Season, col = Season))+ scale_fill_discrete(name = "Year Range") + ggtitle("Average Temperature across Year Ranges")
 ```
 
 This graph supports the same pattern that the smoothing line in the previous graph indicated, indicating an upward trend.
@@ -139,9 +144,11 @@ This graph supports the same pattern that the smoothing line in the previous gra
 
 Here we'll look at average temperatures across the seasons in Raleigh.
 
-```{r avgtempacrossseason, eval=TRUE, echo=FALSE, warning = FALSE, message = FALSE}
+```{r avgtempacrossseason2, eval=TRUE, echo=FALSE, warning = FALSE, message = FALSE}
+#make plot of average temperatures across each season
 g <- ggplot(Raleigh, aes(Season, averagetemperature), show.legend = TRUE)
-g + geom_boxplot(aes(color = Season)) + stat_summary(fun.y = mean, geom = "line", lwd = .5, aes(group = YearRange, col = YearRange))+ scale_fill_discrete(name = "Season") + ggtitle("Average Temperature across Seasons")
+#make this a box plot, with a line graph going across it for each year range
+g + geom_boxplot(aes(color = Season)) + stat_summary(fun.y = mean, geom = "line", lwd = .75, aes(group = YearRange, col = YearRange))+ scale_fill_discrete(name = "Season") + ggtitle("Average Temperature across Seasons")
 ```
 
 To my surprise as a Raleigh local, the winters are historically colder than the summers! Sometimes its hard to tell the difference...
@@ -161,9 +168,11 @@ g + geom_bar(stat="identity",fill="red") + labs(x="Raleigh Seasons",y="Raleigh A
 Here we'll group the average temperatures across year ranges and seasons and look at them side by side.
 
 ```{r avgtempacrossseasonandrange, eval=TRUE, echo=FALSE, warning = FALSE, message = FALSE}
+#group average temperature means across seasons across year ranges
 preG <- Raleigh %>% group_by(YearRange, Season) %>% summarise(mean = mean(averagetemperature, na.rm = TRUE))
 g <- ggplot(data = preG, aes(x = YearRange, y = mean))
-g + geom_bar(aes(fill = as.factor(Season)), stat = "identity", position = "dodge") + labs(x ="Year Ranges") + scale_fill_discrete(name = "Season") + labs(y = "Average Temperature")
+#make a bar graph for each Year Range, further divide within it for each season
+g + geom_bar(aes(fill = as.factor(Season)), stat = "identity", position = "dodge") + labs(x ="Year Ranges") +            scale_fill_discrete(name = "Season") + labs(y = "Average Temperature")
 ```
 
 The following chart shows a line chart starting in 2000 and ending in 2013 for each season. We see the biggest spike at 28.089 degrees in 2007 and biggest drop in 2010. We see that like the bar chart above that Spring and Fall fall relatively close together. 
@@ -182,8 +191,10 @@ ggplot(Raleigh_2000, aes(x=Year, y=averagetemperature, group=Season)) +
 As history presses onward, the uncertainty associated with the recorded values of average temperature should go down, no? Here we'll look at the average temperature uncertainty over the years.
 
 ```{r avgtempunacrossyear, eval=TRUE, echo=FALSE, warning = FALSE, message = FALSE}
+#group measurement uncertainty mean by each year
 preG <- Raleigh %>% group_by(Year) %>% summarise(`Average Mean Temperature Uncertainty`= mean(averagetemperatureuncertainty, na.rm = TRUE))
 g <- ggplot(data = preG, aes(Year, `Average Mean Temperature Uncertainty`))
+#show a scatterplot of this uncertainty across all years with a line of best fit
 g + geom_point(color = "darkorange", stat = "identity") + geom_smooth()
 ```
 
