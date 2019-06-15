@@ -153,13 +153,16 @@ g + geom_boxplot(aes(color = Season)) + stat_summary(fun.y = mean, geom = "line"
 
 To my surprise as a Raleigh local, the winters are historically colder than the summers! Sometimes its hard to tell the difference...
 
-The chart below shows the averages for the different seasons. If we filter down to the specific seasons for 2000 and beyond, we can see what year had the highest and lowest average temperature in said season. 
+The chart below shows the averages for the different seasons. If we filter down to the specific seasons for 2000 and beyond, we can see what year had the highest and lowest average temperature in said season. Summer clearly had the highest average and winter had lowest average.
 
-```{r,echo=FALSE}
-Raleigh_2000 <- Raleigh %>% filter(Year >= 2000) 
-g <- ggplot(data = Raleigh_2000, mapping = aes(x=Raleigh_2000$Season,y = Raleigh_2000$averagetemperature))
-g + geom_bar(stat="identity",fill="red") + labs(x="Raleigh Seasons",y="Raleigh Average Temperature")
+```{r Raleigh2000,echo=FALSE}
+#filtering the data set to just show data from 2000 onward. Grouping by season and year and obtaining average for average temperature and average temperature (uncertainty). 
+Raleigh_2000 <- Raleigh %>% filter(Year >= 2000) %>% group_by(Season,Year) %>% summarize(avgRaleigh = mean(averagetemperature), avgRaleighUncertain = mean(averagetemperatureuncertainty),na.rm=TRUE)
 
+
+#creates a bar chart with Season on x-axis and average temperature on y-axis. 
+g <- ggplot(Raleigh_2000, aes(x=Season,y = avgRaleigh))
+g + geom_bar(stat="identity", fill="red") 
 ```
 
 
@@ -175,20 +178,21 @@ g <- ggplot(data = preG, aes(x = YearRange, y = mean))
 g + geom_bar(aes(fill = as.factor(Season)), stat = "identity", position = "dodge") + labs(x ="Year Ranges") +            scale_fill_discrete(name = "Season") + labs(y = "Average Temperature")
 ```
 
-The following chart shows a line chart starting in 2000 and ending in 2013 for each season. We see the biggest spike at 28.089 degrees in 2007 and biggest drop in 2010. We see that like the bar chart above that Spring and Fall fall relatively close together. 
+The following chart shows a line chart starting in 2000 and ending in 2013 for each season. We see highest peak and lowest peak are in both 2010 for summer and winter. We see a big increase in the Fall coming after 2013 with a decrease in temperature in the Spring. 
 
-```{r,echo=FALSE}
+```{r RaleighLine,echo=FALSE}
 
-ggplot(Raleigh_2000, aes(x=Year, y=averagetemperature, group=Season)) +
+#Raleigh_2000 was read in above in chunk Raleigh2000. Creating a line chart showing the different sesons along with the years on x-axis and average temperature on y-axis. 
+
+ggplot(Raleigh_2000, aes(x=Year, y=avgRaleigh, group=Season)) +
   geom_line(aes(linetype=Season, color=Season))+
   geom_point(aes(color=Season))
-
 ```
 
 #### Trend of Average Temperature Uncertainty
 
 
-As history presses onward, the uncertainty associated with the recorded values of average temperature should go down, no? Here we'll look at the average temperature uncertainty over the years.
+As history presses onward, the uncertainty associated with the recorded values of average temperature should go down, no? Here we'll look at the average temperature uncertainty over the years. We see how the temperatures start high and throughout time continue to decrease. It is possible after 2013 to have a slight increase based on the graph. 
 
 ```{r avgtempunacrossyear, eval=TRUE, echo=FALSE, warning = FALSE, message = FALSE}
 #group measurement uncertainty mean by each year
@@ -200,24 +204,29 @@ g + geom_point(color = "darkorange", stat = "identity") + geom_smooth()
 
 We see here how the relationship between Year and Uncertainty is quadratic! Here's to the apparent rising uncertainty measurements of our more recent years changing back soon...
 
-The graph below shows the season values for the average temperatures under uncertainty. We see how summer is only slightly higher compared to the above bar chart. 
+The graph below shows the season values for the average temperatures under uncertainty. We see how spring shows to have lowest temperature compared to other seasons. 
 
-```{r,echo=FALSE}
-Raleigh_uncertain_2000 <- Raleigh %>% filter(Year >= 2000) 
-g <- ggplot(data = Raleigh_uncertain_2000, mapping = aes(x=Raleigh_uncertain_2000$Season,y = Raleigh_uncertain_2000$averagetemperatureuncertainty))
-g + geom_bar(stat="identity",fill="blue") + labs(x="Raleigh Seasons",y="Raleigh Average Temperature (Uncertainty)")
+```{r tempUncertain,echo=FALSE}
+
+#filtering Raleigh data set to show 2000 onward and grouping by season and year. 
+Raleigh_2000 <- Raleigh %>% filter(Year >= 2000) %>% group_by(Season,Year) %>% summarize(avgRaleigh = mean(averagetemperature), avgRaleighUncertain = mean(averagetemperatureuncertainty),na.rm=TRUE)
+
+#bar chart of Raleigh_2000 with Season as x-axis and average temperature Uncertainty as y-axis. 
+g <- ggplot(Raleigh_2000, aes(x=Season,y = avgRaleighUncertain))
+g + geom_bar(stat="identity", fill="blue") 
+
+
 ```
 
 
 We see from the line graph below how the temperatures are relatively close together in the 2000s, but we see a big spike in temperature in the Fall. This could be a potential outlier that we could consider to remove if we wanted to do a prediction model. 
 
-```{r,echo=FALSE}
+```{r Raleighline2,echo=FALSE}
 
-ggplot(Raleigh_2000, aes(x=Year, y=averagetemperatureuncertainty, group=Season)) +
+#line chart of the different seasons with years on x-axis and average temperature (uncertainty) on y-axis. 
+ggplot(Raleigh_2000, aes(x=Year, y=avgRaleighUncertain, group=Season)) +
   geom_line(aes(linetype=Season, color=Season))+
   geom_point(aes(color=Season))
-
-
 
 ```
 
@@ -227,69 +236,82 @@ This looks at the year distribution of 2013 month by month. Notice how it shows 
 
 
 ```{r averagemonth2013,echo=FALSE,warning=FALSE,message=FALSE}
-Raleigh_2013 <- Raleigh %>% filter(Year==2013) 
+
+#filter Raleigh data set to just show year 2013 and group by month. 
+Raleigh_2013 <- Raleigh %>% filter(Year==2013) %>% group_by(Month) %>% summarize(avgRaleigh1 = mean(averagetemperature),avgRaleighUncertain1 = mean(averagetemperatureuncertainty))
+
+#change month variable to a factor. 
 Raleigh_2013$Month <- as.factor(Raleigh_2013$Month)
 
-g <- ggplot(data=Raleigh_2013, mapping=aes(x=Raleigh_2013$Month,y=Raleigh_2013$averagetemperature))
-
+#bar chart with Month as x-axis and average temperature as y-axis. 
+g <- ggplot(Raleigh_2013, aes(Month,y=avgRaleigh1))
 g + geom_bar(stat="identity") + labs(title = "Raleigh 2013",x="Raleigh in 2013 Month by Month",y="Raleigh 2013 Average Temperature") 
-
-
 ```
 
+
 ```{r averagemonth2012,echo=FALSE,warning=FALSE,message=FALSE}
-Raleigh_2012 <- Raleigh %>% filter(Year==2012) 
+#filter Raleigh data set to just show year 2012 and group by month. 
+Raleigh_2012 <- Raleigh %>% filter(Year==2012) %>% group_by(Month) %>% summarize(avgRaleigh2 = mean(averagetemperature),avgRaleighUncertain2 = mean(averagetemperatureuncertainty))
+
+#change month variable to a factor. 
 Raleigh_2012$Month <- as.factor(Raleigh_2012$Month)
 
-g <- ggplot(data=Raleigh_2012, mapping=aes(x=Raleigh_2012$Month,y=Raleigh_2012$averagetemperature))
+#bar chart with Month as x-axis and average temperature as y-axis. 
+g <- ggplot(Raleigh_2012, aes(Month,y=avgRaleigh2))
+g + geom_bar(stat="identity") + labs(title = "Raleigh 2012",x="Raleigh in 2012 Month by Month",y="Raleigh 2012 Average Temperature") 
 
-g + geom_bar(stat="identity") + labs(title = "Raleigh 2012",x="Raleigh in 2013 Month by Month",y="Raleigh 2013 Average Temperature") 
 
 
 ```
 
 ###### Average Temperature (uncertainty) 2012 and 2013
 
-Looking at 2013, the average temperature shows to be pretty steady but we clearly see an outlier in September. Looking at 2012, the temperature shows to be high in January and doesn't show a big increase until June and then drops again until November.
+Looking at 2013, the average temperature shows to be pretty steady but we clearly see an outlier in September which could be from that huge spike from the line chart above. Looking at 2012, the temperature shows to be high in January and doesn't show a big increase until June and then drops again until November.
 
 
-```{r averagemonth2013a,echo=FALSE,warning=FALSE,message=FALSE}
-Raleigh_2013 <- Raleigh %>% filter(Year==2013) 
+ ```{r averagemonth2013a,echo=FALSE,warning=FALSE,message=FALSE}
+
+#filter Raleigh data set to just show year 2013 and group by month.
+
+Raleigh_2013 <- Raleigh %>% filter(Year==2013) %>% group_by(Month) %>% summarize(avgRaleigh1 = mean(averagetemperature),avgRaleighUncertain1 = mean(averagetemperatureuncertainty))
+
+#change month variable to a factor. 
 Raleigh_2013$Month <- as.factor(Raleigh_2013$Month)
 
-g <- ggplot(data=Raleigh_2013, mapping=aes(x=Raleigh_2013$Month,y=Raleigh_2013$averagetemperatureuncertainty))
-
+#bar chart with Month as x-axis and average temperature as y-axis. 
+g <- ggplot(data=Raleigh_2013, mapping=aes(x=Month,y=avgRaleighUncertain1))
 g + geom_bar(stat="identity") + labs(title = "Raleigh (uncertainty) 2013",x="Raleigh in 2013 Month by Month",y="Raleigh 2013 Average Temperature") 
-
-
 ```
 
 ```{r averagemonth2012b,echo=FALSE,warning=FALSE,message=FALSE}
-Raleigh_2012 <- Raleigh %>% filter(Year==2012) 
+
+#filter Raleigh data set to just show year 2012 and group by month.
+Raleigh_2012 <- Raleigh %>% filter(Year==2012) %>% group_by(Month) %>% summarize(avgRaleigh2 = mean(averagetemperature),avgRaleighUncertain2 = mean(averagetemperatureuncertainty))
+
+#change month variable to a factor. 
 Raleigh_2012$Month <- as.factor(Raleigh_2012$Month)
 
-g <- ggplot(data=Raleigh_2012, mapping=aes(x=Raleigh_2012$Month,y=Raleigh_2012$averagetemperatureuncertainty))
-
+#bar chart with Month as x-axis and average temperature as y-axis. 
+g <- ggplot(data=Raleigh_2012, mapping=aes(x=Month,y=avgRaleighUncertain2))
 g + geom_bar(stat="identity") + labs(title = "Raleigh (uncertainty) 2012",x="Raleigh in 2013 Month by Month",y="Raleigh 2013 Average Temperature") 
-
-
 ```
 
 ##### Average Temperature and Uncertainty
 
-Below shows a scatterplot of average temperature versus average temperature (uncertainty). We see how most points show at the bottom with the exception of the potential outlier in the Fall like mentioned above. 
+Below shows a scatterplot of average temperature versus average temperature (uncertainty) for 2000 onward. We see how most points show at the bottom with the exception of the potential outlier in the Fall like mentioned above. Spring and Fall show to be grouped together with the exception of that outlier.
 
 
-```{r,echo=FALSE}
+```{r scatter,echo=FALSE}
 library(dplyr)
-correlation <- cor(Raleigh_2000$averagetemperature,Raleigh_2000$averagetemperatureuncertainty)
-g <- ggplot(Raleigh_2000, aes(x = averagetemperature, y = averagetemperatureuncertainty,color=Season)) 
 
+#scatterplot of average temperature and average temperature (uncertainty) for 2000 onward.
+
+correlation <- cor(Raleigh_2000$avgRaleigh,Raleigh_2000$avgRaleighUncertain)
+g <- ggplot(Raleigh_2000, aes(x = avgRaleigh, y = avgRaleighUncertain,color=Season)) 
 g + geom_point() + labs(x="Average Temperature 2000 Raleigh",y="Average Temperature (uncertainty) 2000 Raleigh")
-
 ```
 
 # Conclusion
 
-We see how JSON are efficient files that are pretty easy to handle with R to access data sets saved online. We looked at one such data set to examine average temperatures and measurement uncertainty across Raleigh's history and in more recent years. In conclusion, R's your friend when it comes to handling JSON files, Raleigh's temperatures seem to be on the rise, which is certainly evident to us locals when we sweat on Christmas Eve. 
+We see how JSON are efficient files that are pretty easy to handle with R to access data sets saved online. We looked at one such data set to examine average temperatures and measurement uncertainty across Raleigh's history and in more recent years. We looked at the yearly breakdown of 2000 onward and compared the four seasons along with the monthly breakdown for 2012 and 2013. Temperatures were pretty predictable with the exception of that outlier in the Fall. We also see how the monthly breakdown showed a skewed distribution in 2013 and more normal in 2012. In conclusion, R's your friend when it comes to handling JSON files, Raleigh's temperatures seem to be on the rise, which is certainly evident to us locals when we sweat on Christmas Eve. 
 
