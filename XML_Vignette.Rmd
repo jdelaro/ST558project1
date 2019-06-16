@@ -144,9 +144,7 @@ deathRateData <- deathRatesDF %>% dplyr::transmute(Year = as.integer(year),
                                              AveLifeExp = as.double(average_life_expectancy),
                                                    Mort = as.double(mortality))
 
-
-deathRateData3 <- deathRateData %>% filter(Race != "All Races" | Sex != "Both Sexes")
-
+deathRateData
 ```
 ```{r include=FALSE}
 # Creating new variables: Distance from year mean...
@@ -168,21 +166,9 @@ df2 <- df %>% mutate(DistFromMeanLE = round((AveLifeExp - AvgLE),1), DistFromMea
 AdjustedDeathRateData <- df2 %>% 
               select(Year, Race, Sex, AveLifeExp, Mort, DistFromMeanLE, DistFromMeanMort) %>%
               filter(Race != "All Races" | Sex != "Both Sexes")
+
+#Create Adjusted Death Rate Table
 DT::datatable(AdjustedDeathRateData, caption = "Table 3: Life Expectancy and Mortality by Race and Sex  with New Variables")
-
-
-# if(deathRateData$Year == avgLE$Year){
-#   deathRateData2 <- deathRateData %>% mutate(DistAvgLifeExp <- (AveLifeExp - avgLE$AveLifeExp))
-# }
-
-# yearAvgLifeExp <- deathRateData %>% group_by(Year) %>% summarise(mean(AveLifeExp))
-# 
-# yearAvgLifeExp <- deathRateData %>% select(Year, Race == "All Races", Sex == "Both Sexes")
-# 
-# if(deathRateData$Year == yearAvgLifeExp$Year){
-#   distFromMean <- deathRateData$AveLifeExp - yearAvgLifeExp$`mean(AveLifeExp)`
-# }
-# deathRateData2 <- deathRatesDF %>% dplyr::mutate(distFromMean )
 
 ```
 # Exploratory data analysis
@@ -230,8 +216,6 @@ Average life expectancy and age-adjusted death rate by race and sex
 
 deathRateData %>% group_by(Race) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Age-Adjusted Death Rate`=RoundedMean(Mort, 1)) %>% kable(caption = "Table 4: Average life expectancy and age-adjusted death rate by race")
 
-# meanAdjustedDeathRateData %>% group_by(Race) %>% summarise(`Mean Life Expectancy`=RoundedMean(meanLifeExpectancy, 1), `Average Age-Adjusted Death Rate`=RoundedMean(meanMort, 1)) %>% kable(caption = "Table 4: Average life expectancy and age-adjusted death rate by race")
-
 deathRateData %>% group_by(Sex) %>% summarise(`Mean Life Expectancy`=RoundedMean(AveLifeExp, 1), `Average Age-Adjusted Death Rate`=RoundedMean(Mort, 1)) %>% kable(caption = "Table 5: Average life expectancy and age-adjusted death rate by sex")
 
 
@@ -260,9 +244,8 @@ m + geom_point(color = "navy blue") +
 
 #### Line Plots
 
-The line plots show a clear trend in both life expectancy and age-adjusted death rate by year. The first line plot shows that there is a steady increase in life expectancy as the year increases. The only time there is a significant drop in life expectancy from one year to the next is in 1918, and this can be attriuted to the influenza epidemic that killed many people. Conversely, there is a steady decline in age-adjusted death rates as the year increases, which makes sense because people are living longer, and less people are dying.
+The line plots show a clear trend in both life expectancy and age-adjusted death rate by year. The first line plot shows that there is a steady increase in life expectancy as the year increases. The only time there is a significant drop in life expectancy from one year to the next is in 1918, and this can be attributed to the influenza pandemic that killed many people. Conversely, there is a steady decline in age-adjusted death rates as the year increases, which makes sense because people are living longer, and less people are dying.
 
-The next two line plots show the trends in life expectancy and age-adjusted death rate for each group of race and sex as the years increase. It is evident that white females have the highest life expectancy and lowest age-adjusted death rate, while black males have the lowest life expectancy and highest age-adjusted death rate. This will be confirmed by future graphs.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #Line Plots by year 
@@ -271,6 +254,11 @@ h1 + geom_line(color = 'dark orange', size=1) + labs(title = "Average Life Expec
 
 h2 <- ggplot(data = avgLEM, aes(x = Year, y = AvgMort))
 h2 + geom_line(color = 'blue', size=1) + labs(title = "Average Age-Adjusted Death Rate by Year", y = "Average Age-Adusted Death Rate")
+```
+
+The next two line plots show the trends in life expectancy and age-adjusted death rate for each group of race and sex as the years increase. It is evident that white females have the highest life expectancy and lowest age-adjusted death rate, while black males have the lowest life expectancy and highest age-adjusted death rate. This will be confirmed by future graphs.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
 #Adjust dataset to combine sex and race into one column
 CombinedData <- AdjustedDeathRateData %>% unite(col= Race_Sex, Race, Sex, sep = "/")
@@ -305,21 +293,24 @@ The boxplots show the trends in life expectancy and age-adjusted death rate for 
 
 # Box plots with jitter points overlaid
 g1 <- ggplot(data = deathRateData, aes(x = Race, y = AveLifeExp))
-g1 + geom_boxplot() + geom_jitter(aes(color=Race)) +
-     labs(title = "Life Expectancy by Race Boxplot", y = "Average Life Expectancy")
+boxPlot1 <- g1 + geom_boxplot() + geom_jitter(aes(color=Race), size = .4) +
+     labs(title = "Life Expectancy by Race", y = "Average Life Expectancy")
 
 g2 <- ggplot(data = deathRateData, aes(x = Sex, y = AveLifeExp))
-g2 + geom_boxplot() + geom_jitter(aes(color=Sex)) +
-     labs(title = "Life Expectancy by Sex Boxplot", y = "Average Life Expectancy")
+boxPlot2 <- g2 + geom_boxplot() + geom_jitter(aes(color=Sex), size = .4) +
+     labs(title = "Life Expectancy by Sex", y = "Average Life Expectancy")
 
 
 g3 <- ggplot(data = deathRateData, aes(x = Race, y = Mort))
-g3 + geom_boxplot() + geom_jitter(aes(color=Race)) + 
-     labs(title = "Age-Adjusted Death Rate by Race", y = "Age-Adjusted Death Rate per 100,000")
+boxPlot3 <- g3 + geom_boxplot() + geom_jitter(aes(color=Race), size = .4) + 
+     labs(title = "Age-Adjusted Death Rate by Race", y = "Age-Adjusted Death Rate")
 
 g4 <- ggplot(data = deathRateData, aes(x = Sex, y = Mort))
-g4 + geom_boxplot() + geom_jitter(aes(color=Sex)) + 
-     labs(title = "Age-Adjusted Death Rate by Sex", y = "Age-Adjusted Death Rate per 100,000")
+boxPlot4 <- g4 + geom_boxplot() + geom_jitter(aes(color=Sex), size = .4) + 
+     labs(title = "Age-Adjusted Death Rate by Sex", y = "Age-Adjusted Death Rate")
+
+#Compiling all 4 plots in a 2x2 grid
+gridExtra::grid.arrange(boxPlot1, boxPlot2, boxPlot3, boxPlot4, nrow = 2)
 ```
 
 #### Side-By-Side Bar Plots
@@ -329,6 +320,7 @@ The side-by-side bar plots give a good visual representation of average life exp
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
 #Side by side bar plots of life expectancy by sex grouped by race
+
 #First, must find means of life expectancy and age-adjusted death rate by group
 #Find means of each group for all 4 quantitative variables in AdjustedDeathRateData
 
@@ -338,23 +330,11 @@ meanAdjustedDeathRateData <- AdjustedDeathRateData %>% group_by(Sex, Race) %>%
                               avgDistFromMeanLE = RoundedMean(DistFromMeanLE, 1), 
                               avgDistFromMeanMort = RoundedMean(DistFromMeanMort, 1))
 
-######TRYING TO FIGURE OUT WHY OUR MEANS DONT MATCH FROM OUR TABLES AND GRAPHS###########
-
-# a1 <- ggplot(meanAdjustedDeathRateData, aes(x = Sex, y = meanLifeExpectancy, fill = Sex))
-# a1 + geom_bar(aes(fill = Sex, y = meanLifeExpectancy), stat = "identity", position = "dodge") + 
-#      labs(title = "Bar Plot of Average Life Expectancy by Sex", y = "Average Life Expectancy") +
-#      coord_cartesian(ylim=c(50,71))
-# 
-# a2 <- ggplot(meanAdjustedDeathRateData, aes(x = Race, y = meanLifeExpectancy, fill = Race))
-# a2 + geom_bar(aes(fill = Race, y = meanLifeExpectancy), stat = "identity", position = "dodge") + 
-#      labs(title = "Bar Plot of Average Life Expectancy by Race", y = "Average Life Expectancy") +
-#      coord_cartesian(ylim=c(50,71))
-#################
-
 n1 <- ggplot(meanAdjustedDeathRateData, aes(x = Sex, y = meanLifeExpectancy, fill = Race))
 n1 + geom_bar(aes(fill = Race, y = meanLifeExpectancy), stat = "identity", position = "dodge") + 
      labs(title = "Side-by-Side Bar Plot of Average Life Expectancy", y = "Average Life Expectancy") +
      coord_cartesian(ylim=c(50,71))
+
 
 n2 <- ggplot(meanAdjustedDeathRateData, aes(x = Sex, y = meanMort, fill = Race))
 n2 + geom_bar(aes(fill = Race, y = meanMort), stat = "identity", position = "dodge") + 
@@ -366,7 +346,9 @@ n2 + geom_bar(aes(fill = Race, y = meanMort), stat = "identity", position = "dod
 
 #### Side-By-Side Bar Plots
 
-These last side-by-side bar plots are similar to the previous ones, but they look at the new variables we created. The mean life expectancy and age-adjusted death rate were take for each year and then these values were subtracted from all of the observations from this year, giving us a distance from the mean for the two variables for every year. The bar graphs show the mean distances from the mean for all of our sex and race combinations. On average, black people have a life expectancy of eight years lower than the average, while white people are about one year above the average. Females are nearly three years above the average, and males are nearly three years below it. On average, black males have a life expectancy of nearly 11 years less than the average life expectancy.
+These last side-by-side bar plots are similar to the previous ones, but they look at the new variables we created. The mean life expectancy and age-adjusted death rate were taken for each year and then these values were subtracted from all of the observations from this year, giving us a distance from the mean for the two variables for every year. 
+
+The bar graphs show the mean distances from the mean for all of our sex and race combinations. On average, black people have a life expectancy of eight years lower than the average, while white people are about one year above the average. Females are nearly three years above the average, and males are nearly three years below it. On average, black males have a life expectancy of nearly 11 years less than the average life expectancy.
 
 The side-by-side bar plot of average distance from mean age-adjusted death rate shows a similar pattern. On average, black males have a death rate of about 625 more deaths per 100000 people than the average. White females have about 200 less deaths per 100000 people than the average.
 
@@ -386,34 +368,6 @@ k2 <- ggplot(data = meanAdjustedDeathRateData, aes(x = Sex, y = avgDistFromMeanM
 k2 + geom_bar(aes(fill = Race, y = avgDistFromMeanMort), stat = "identity", position = "dodge") +
     labs(title = "Mean Distance from Average Age-Adjusted Death Rate by Race and Sex", x = "Race", 
          y = "Mean Distance from Average Age-Adjusted Death Rate")
-
-# meanCombinedData <- CombinedData %>% group_by(Race_Sex) %>% 
-#                     summarise(avgDistLE = round(mean(DistFromMeanLE, na.rm = TRUE),1), 
-#                               avgDistMort = round(mean(DistFromMeanMort), 1))
-# 
-# 
-# j1 <- ggplot(data = meanCombinedData, aes(x = Race_Sex, y = avgDistLE))
-# j1 + geom_bar(aes(fill = Race_Sex, y = avgDistLE), stat = "identity") +
-#     labs(title = "Mean Distance from Average Life Expectancy by Race and Sex", x = "Race/Sex", 
-#          y = "Mean Distance from Average Life Expectancy") +
-#     scale_x_discrete(name = "Race/Sex Combinations", 
-#                      labels = c("Female", "Male", "Black", "Black/F", "Black/M", "White",
-#                               "White/F", "White/M")) +
-#     scale_fill_discrete(name = "Race/Sex Combinations", 
-#                         labels = c("Female", "Male", "Black", "Black/Female", "Black/Male", "White",
-#                                 "White/Female", "White/Male"))
-# 
-# #Bar Plot of average distance from mean Mortality
-# j2 <- ggplot(data = meanCombinedData, aes(x = Race_Sex, y = avgDistMort))
-# j2 + geom_bar(aes(fill = Race_Sex, y = avgDistMort), stat = "identity") +
-#     labs(title = "Mean Distance from Average Age-Adjusted Death Rate by Race and Sex", x = "Race/Sex", 
-#          y = "Mean Distance from Average Age-Adjusted Death Rate") +
-#     scale_x_discrete(name = "Race/Sex Combinations", 
-#                      labels = c("Female", "Male", "Black", "Black/F", "Black/M", "White",
-#                               "White/F", "White/M")) +
-#     scale_fill_discrete(name = "Race/Sex Combinations", 
-#                         labels = c("Female", "Male", "Black", "Black/Female", "Black/Male", "White",
-#                                 "White/Female", "White/Male"))
 
 ```
 
