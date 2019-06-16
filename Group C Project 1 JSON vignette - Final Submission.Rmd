@@ -77,9 +77,9 @@ Below shows a table of our average temperature and average temperature (uncertai
 ```{r table, echo=FALSE,warning=FALSE,message=FALSE}
 library(knitr)
 library(tidyverse)
-Raleigh_data <- Raleigh %>% select(city,country,averagetemperature,averagetemperatureuncertainty,Year,Month,Season,YearRange) %>% arrange(Year)
+Raleigh_data <- Raleigh %>% select(city,country,Year,Month,Season,YearRange) %>% arrange(Year)
 library(DT)
-datatable(Raleigh_data, rownames=FALSE, colnames = c("City","Country","Average Temperature","Average Temperature (uncertainty)","Year","Month","Season","Year Range"))
+datatable(Raleigh_data, rownames=FALSE, colnames = c("City","Country","Year","Month","Season","Year Range"))
 ```
 
 
