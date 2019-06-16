@@ -71,6 +71,20 @@ Raleigh <- MonthYearandSeason(Raleightibble)                        #saves new v
 Raleigh[, 7:10]                                                     #shows new vars in dataset
 ```
 
+### Table of Data
+Below shows a table of our average temperature and average temperature (uncertainty) per year from 1743 to 2013. 
+
+```{r table, echo=FALSE,warning=FALSE,message=FALSE}
+
+library(knitr)
+library(tidyverse)
+Raleigh_data <- Raleigh %>% select(city,country,averagetemperature,averagetemperatureuncertainty,Year,Month,Season,YearRange) %>% arrange(Year)
+
+library(DT)
+datatable(Raleigh_data, rownames=FALSE, colnames = c("City","Country","Average Temperature","Average Temperature (uncertainty)","Year","Month","Season","Year Range"))
+```
+
+
 ### Numeric summaries
 
 #### Year Range and Seasons Distribution
@@ -244,7 +258,7 @@ Raleigh_2013 <- Raleigh %>% filter(Year==2013) %>% group_by(Month) %>% summarize
 Raleigh_2013$Month <- as.factor(Raleigh_2013$Month)
 
 #bar chart with Month as x-axis and average temperature as y-axis. 
-g <- ggplot(Raleigh_2013, aes(Month,y=avgRaleigh1))
+g <- ggplot(Raleigh_2013, aes(Month,y=avgRaleigh1,fill=Season))
 g + geom_bar(stat="identity") + labs(title = "Raleigh 2013",x="Raleigh in 2013 Month by Month",y="Raleigh 2013 Average Temperature") 
 ```
 
@@ -257,7 +271,7 @@ Raleigh_2012 <- Raleigh %>% filter(Year==2012) %>% group_by(Month) %>% summarize
 Raleigh_2012$Month <- as.factor(Raleigh_2012$Month)
 
 #bar chart with Month as x-axis and average temperature as y-axis. 
-g <- ggplot(Raleigh_2012, aes(Month,y=avgRaleigh2))
+g <- ggplot(Raleigh_2012, aes(Month,y=avgRaleigh2,fill=Season))
 g + geom_bar(stat="identity") + labs(title = "Raleigh 2012",x="Raleigh in 2012 Month by Month",y="Raleigh 2012 Average Temperature") 
 
 
@@ -279,7 +293,7 @@ Raleigh_2013 <- Raleigh %>% filter(Year==2013) %>% group_by(Month) %>% summarize
 Raleigh_2013$Month <- as.factor(Raleigh_2013$Month)
 
 #bar chart with Month as x-axis and average temperature as y-axis. 
-g <- ggplot(data=Raleigh_2013, mapping=aes(x=Month,y=avgRaleighUncertain1))
+g <- ggplot(data=Raleigh_2013, mapping=aes(x=Month,y=avgRaleighUncertain1,fill=Season))
 g + geom_bar(stat="identity") + labs(title = "Raleigh (uncertainty) 2013",x="Raleigh in 2013 Month by Month",y="Raleigh 2013 Average Temperature") 
 ```
 
@@ -292,7 +306,7 @@ Raleigh_2012 <- Raleigh %>% filter(Year==2012) %>% group_by(Month) %>% summarize
 Raleigh_2012$Month <- as.factor(Raleigh_2012$Month)
 
 #bar chart with Month as x-axis and average temperature as y-axis. 
-g <- ggplot(data=Raleigh_2012, mapping=aes(x=Month,y=avgRaleighUncertain2))
+g <- ggplot(data=Raleigh_2012, mapping=aes(x=Month,y=avgRaleighUncertain2,fill=Season))
 g + geom_bar(stat="identity") + labs(title = "Raleigh (uncertainty) 2012",x="Raleigh in 2013 Month by Month",y="Raleigh 2013 Average Temperature") 
 ```
 
